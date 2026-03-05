@@ -141,19 +141,19 @@ export default function HomePage() {
                 label: "배정 전",
                 emoji: "📑",
                 desc: "학교 탐색, 점수 계산, 서류 준비",
-                color: "text-blue-500",
+                badge: "status-badge-pre"
               },
               {
                 label: "파견 중",
                 emoji: "🌍",
                 desc: "현지 정보, 중고거래, 여행 동행",
-                color: "text-green-500",
+                badge: "status-badge-abroad"
               },
               {
                 label: "파견 후",
                 emoji: "🛬",
                 desc: "학점 이전, 경험 공유, 후기 작성",
-                color: "text-orange-500",
+                badge: "status-badge-returned"
               },
             ].map((stage, i) => (
               <motion.div
@@ -163,13 +163,11 @@ export default function HomePage() {
                 whileInView="visible"
                 viewport={{ once: true }}
                 variants={stageAnim}
-                className="bg-background border rounded-xl p-6 text-center shadow-sm"
-              >
+className="card-elevated p-6 text-center shadow-sm bg-background border rounded-xl"              >
+                
                 <div className="text-4xl mb-3">{stage.emoji}</div>
                 <span
-                  className={`font-bold px-3 py-1 rounded-full bg-muted ${stage.color}`}
-                >
-                  {stage.label}
+                  className={`${stage.badge} font-medium`}>{stage.label}
                 </span>
                 <p className="text-sm text-muted-foreground mt-3">
                   {stage.desc}
