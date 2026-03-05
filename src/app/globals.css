@@ -1,0 +1,64 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+@theme {
+  /* Ewha Theme Colors */
+  --color-background: hsl(40 20% 98%);
+  --color-foreground: hsl(220 25% 12%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(220 25% 12%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(220 25% 12%);
+  --color-primary: hsl(165 55% 32%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(40 25% 94%);
+  --color-secondary-foreground: hsl(220 25% 18%);
+  --color-muted: hsl(40 15% 94%);
+  --color-muted-foreground: hsl(220 10% 48%);
+  --color-accent: hsl(165 40% 92%);
+  --color-accent-foreground: hsl(165 55% 22%);
+  --color-destructive: hsl(0 72% 51%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border: hsl(220 13% 90%);
+  --color-input: hsl(220 13% 90%);
+  --color-ring: hsl(165 55% 32%);
+
+  /* Border Radius */
+  --radius-lg: 0.75rem;
+  --radius-md: calc(0.75rem - 2px);
+  --radius-sm: calc(0.75rem - 4px);
+
+  /* Custom Tokens */
+  --color-ewha-green: hsl(165 55% 32%);
+  --shadow-glow: 0 0 24px hsl(165 55% 32% / 0.15);
+}
+
+@layer base {
+  * {
+    /* @apply border-border 대신 직접 변수를 참조하여 빌드 에러를 해결합니다 */
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: "Noto Sans KR", sans-serif;
+  }
+}
+
+@layer components {
+  .container-tight {
+    @apply mx-auto w-full max-w-5xl px-4 sm:px-6;
+  }
+  .card-elevated {
+    @apply bg-card rounded-xl border shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
+  .status-badge-pre {
+    @apply bg-amber-100 text-amber-700 text-xs font-medium px-2.5 py-0.5 rounded-full;
+  }
+  .status-badge-abroad {
+    @apply bg-emerald-100 text-emerald-700 text-xs font-medium px-2.5 py-0.5 rounded-full;
+  }
+  .status-badge-returned {
+    @apply bg-blue-100 text-blue-700 text-xs font-medium px-2.5 py-0.5 rounded-full;
+  }
+}
