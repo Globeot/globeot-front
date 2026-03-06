@@ -311,12 +311,17 @@ const LoginPage = () => {
                 <p className="text-xs text-muted-foreground mt-1">
                   @ewha.ac.kr 또는 @ewhain.net 도메인만 허용
                 </p>
+                {emailError && (
+                  <p className="text-sm text-red-500 mt-2">{emailError}</p>
+                )}
               </div>
               <Button
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                onClick={() => setSignupStep(2)}
+                onClick={handleSendVerificationCode}
+                disabled={isSendingCode}
               >
-                인증번호 발송
+                {isSendingCode ? "발송 중..." : "인증번호 발송"}
+                {!isSendingCode && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </div>
           ) : signupStep === 2 ? (
