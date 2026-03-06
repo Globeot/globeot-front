@@ -23,6 +23,8 @@ const LoginPage = () => {
   const [isSendingCode, setIsSendingCode] = useState(false); //인증코드 보내는 중?
   const [emailError, setEmailError] = useState(""); //메일양식 에러
 
+  const [otpError, setOtpError] = useState(""); //인증번호 관련
+
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [isCheckingNickname, setIsCheckingNickname] = useState(false); //닉네임 확인중?
   const [isNicknameChecked, setIsNicknameChecked] = useState(false); //닉네임 중복확인 (추후)
@@ -37,6 +39,7 @@ const LoginPage = () => {
     setSignupStep(1);
     setEmailError("");
     setIsNicknameChecked(false);
+    setOtpError("");
   };
 
   //메일검증 메소드
@@ -99,8 +102,40 @@ const LoginPage = () => {
       setIsSendingCode(false);
     }
   };
+  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const onlyNumbers = e.target.value.replace(/\D/g, "").slice(0, 6);
+    setOtp(onlyNumbers);
+    setOtpError("");
+  };
+  //*회원가입 2단계
+  //인증번호 검증 (미완 - 백엔드)
+  const handleVerifyOtp = async () => {
+    if (!otp) {
+      setOtpError("인증번호를 입력해 주세요.");
+      alert("인증번호를 입력해 주세요.");
+      return;
+    }
 
-  //*최종 회원가입
+    if (!/^\d{6}$/.test(otp)) {
+      setOtpError("인증번호는 숫자 6자리여야 합니다.");
+      alert("인증번호는 숫자 6자리여야 합니다.");
+      return;
+    }
+    //추후 백엔드 붙일 예정
+    try {
+      setOtpError("");
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      alert("이메일 인증이 완료되었습니다.");
+      setSignupStep(3);
+    } catch (error) {
+      console.error(error);
+      setOtpError("인증 확인 중 오류가 발생했습니다.");
+      alert("인증 확인 중 오류가 발생했습니다.");
+    }
+  };
+
+  //*회원가입 3단계
   //중복아이디 검증 (미완)
   const handleCheckNickname = async () => {
     if (!nickname.trim()) {
@@ -288,12 +323,16 @@ const LoginPage = () => {
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium">인증번호 (6자리)</Label>
+                {otpError && (
+                  <p className="text-sm text-red-500 mt-2">{otpError}</p>
+                )}
                 <Input
                   type="text"
+                  inputMode="numeric"
                   maxLength={6}
                   placeholder="000000"
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
+                  onChange={handleOtpChange}
                   className="mt-1.5 text-center text-lg tracking-[0.5em] font-mono"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
@@ -302,7 +341,7 @@ const LoginPage = () => {
               </div>
               <Button
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                onClick={() => setSignupStep(3)}
+                onClick={handleVerifyOtp}
               >
                 인증 확인
               </Button>
