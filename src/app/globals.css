@@ -35,7 +35,6 @@
 
 @layer base {
   * {
-    /* @apply border-border 대신 직접 변수를 참조하여 빌드 에러를 해결합니다 */
     border-color: var(--color-border);
   }
   body {

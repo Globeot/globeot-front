@@ -1,6 +1,6 @@
-"use client"; // framer-motion 및 클라이언트 사이드 로직을 위해 추가
+"use client";
 
-import Link from "next/link"; // react-router-dom 대신 next/link 사용
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, MessageSquare, Globe, Trophy } from "lucide-react";
 import { Button } from "../components/ui/button";
@@ -42,7 +42,6 @@ const stageAnim = {
 export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/30 py-16 sm:py-24">
         <div className="container px-4 md:px-6 text-center mx-auto max-w-5xl">
           <motion.div
@@ -87,7 +86,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features Section */}
       <section className="py-16 sm:py-20">
         <div className="container px-4 md:px-6 mx-auto max-w-5xl">
           <div className="text-center mb-12">
@@ -129,7 +127,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Stages Section */}
       <section className="py-16 bg-muted/50">
         <div className="container px-4 md:px-6 mx-auto max-w-5xl">
           <h2 className="text-2xl sm:text-3xl font-bold text-center text-foreground mb-10">
@@ -141,19 +138,19 @@ export default function HomePage() {
                 label: "배정 전",
                 emoji: "📑",
                 desc: "학교 탐색, 점수 계산, 서류 준비",
-                badge: "status-badge-pre"
+                badge: "status-badge-pre",
               },
               {
                 label: "파견 중",
                 emoji: "🌍",
                 desc: "현지 정보, 중고거래, 여행 동행",
-                badge: "status-badge-abroad"
+                badge: "status-badge-abroad",
               },
               {
                 label: "파견 후",
                 emoji: "🛬",
                 desc: "학점 이전, 경험 공유, 후기 작성",
-                badge: "status-badge-returned"
+                badge: "status-badge-returned",
               },
             ].map((stage, i) => (
               <motion.div
@@ -163,11 +160,11 @@ export default function HomePage() {
                 whileInView="visible"
                 viewport={{ once: true }}
                 variants={stageAnim}
-className="card-elevated p-6 text-center shadow-sm bg-background border rounded-xl"              >
-                
+                className="card-elevated p-6 text-center shadow-sm bg-background border rounded-xl"
+              >
                 <div className="text-4xl mb-3">{stage.emoji}</div>
-                <span
-                  className={`${stage.badge} font-medium`}>{stage.label}
+                <span className={`${stage.badge} font-medium`}>
+                  {stage.label}
                 </span>
                 <p className="text-sm text-muted-foreground mt-3">
                   {stage.desc}

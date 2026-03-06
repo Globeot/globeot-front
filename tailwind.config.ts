@@ -1,7 +1,6 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  // 에러 원인 수정: ["class"]를 "class"로 변경
   darkMode: "class",
   content: [
     "./src/pages/**/*.{ts,tsx}",
@@ -14,8 +13,6 @@ const config: Config = {
       fontFamily: {
         sans: ['"Noto Sans KR"', "system-ui", "-apple-system", "sans-serif"],
       },
-      // v4를 사용 중이므로 colors 설정은 globals.css의 @theme에서 관리하는 것이 권장되지만,
-      // 기존 코드가 깨지지 않도록 변수 매핑을 유지합니다.
       colors: {
         border: "var(--color-border)",
         input: "var(--color-input)",
