@@ -110,72 +110,61 @@ export default function RankingPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const filtered = [...mockRanking]
-    .filter((entry) => {
-      if (semesterFilter !== "all" && entry.semester !== semesterFilter) {
+    .filter((e) => {
+      if (semesterFilter !== "all" && e.semester !== semesterFilter)
         return false;
-      }
-
-      if (
-        schoolSearch &&
-        !entry.schools.some((school) => school.includes(schoolSearch))
-      ) {
+      if (schoolSearch && !e.schools.some((s) => s.includes(schoolSearch)))
         return false;
-      }
-
       return true;
     })
     .sort((a, b) => b.score - a.score)
-    .map((entry, index) => ({
-      ...entry,
-      rank: index + 1,
-    }));
+    .map((e, i) => ({ ...e, rank: i + 1 }));
 
-  const me = filtered.find((entry) => entry.isMe);
+  const me = filtered.find((e) => e.isMe);
   const totalCount = filtered.length;
 
   return (
     <div className="py-6 sm:py-10">
-      <div className="mx-auto w-full max-w-5xl px-4">
+      <div className="container-tight">
         <div className="mb-1 flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
-            className="-ml-2 shrink-0"
+            className="shrink-0 -ml-2"
             onClick={() => router.push("/application-db")}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
             지원 랭킹
           </h1>
         </div>
 
-        <p className="mb-6 ml-9 text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm mb-6 ml-9">
           환산 점수 기준 전체 랭킹 · 참고용 데이터입니다
         </p>
 
         {me && (
-          <div className="mb-6 rounded-2xl border border-primary/20 border-l-4 border-l-primary bg-primary/[0.03] p-5 shadow-sm">
+          <div className="card-elevated p-5 mb-6 border-l-4 border-l-primary bg-primary/[0.03]">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                   <Medal className="h-6 w-6 text-primary" />
                 </div>
-
                 <div>
-                  <p className="mb-0.5 text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground mb-0.5">
                     나의 순위
                   </p>
                   <p className="text-2xl font-extrabold text-foreground">
                     {me.rank}위
-                    <span className="ml-1.5 text-sm font-medium text-muted-foreground">
+                    <span className="text-sm font-medium text-muted-foreground ml-1.5">
                       / {totalCount}명
                     </span>
                   </p>
                 </div>
               </div>
 
-              <div className="shrink-0 text-right">
+              <div className="text-right shrink-0">
                 <p className="text-xs text-muted-foreground">환산 점수</p>
                 <p className="text-2xl font-extrabold text-primary">
                   {me.score}
@@ -185,14 +174,14 @@ export default function RankingPage() {
             </div>
 
             {me.schools.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border/50 pt-3">
-                {me.schools.map((school, index) => (
+              <div className="mt-3 pt-3 border-t border-border/50 flex flex-wrap gap-1.5">
+                {me.schools.map((s, i) => (
                   <span
-                    key={school}
-                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+                    key={s}
+                    className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium"
                   >
                     <GraduationCap className="h-3 w-3" />
-                    {index + 1}순위 {school}
+                    {i + 1}순위 {s}
                   </span>
                 ))}
               </div>
@@ -200,7 +189,7 @@ export default function RankingPage() {
           </div>
         )}
 
-        <div className="mb-5 flex items-center gap-4">
+        <div className="flex items-center gap-4 mb-5">
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Users className="h-4 w-4" />
             <span>
@@ -222,30 +211,30 @@ export default function RankingPage() {
           )}
         </div>
 
-        <div className="mb-5 space-y-3">
+        <div className="space-y-3 mb-5">
           <div className="flex flex-wrap gap-2">
-            <span className="mr-1 self-center text-xs font-medium text-muted-foreground">
+            <span className="text-xs font-medium text-muted-foreground self-center mr-1">
               학기
             </span>
 
-            {(["all", ...semesterOptions] as const).map((semester) => (
+            {(["all", ...semesterOptions] as const).map((s) => (
               <button
-                key={semester}
+                key={s}
                 type="button"
-                onClick={() => setSemesterFilter(semester as SemesterFilter)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                  semesterFilter === semester
+                onClick={() => setSemesterFilter(s as SemesterFilter)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  semesterFilter === s
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
               >
-                {semester === "all" ? "전체" : semester}
+                {s === "all" ? "전체" : s}
               </button>
             ))}
           </div>
 
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="학교명으로 검색..."
               value={schoolSearch}
@@ -257,7 +246,7 @@ export default function RankingPage() {
 
         <div className="space-y-2">
           {filtered.length === 0 ? (
-            <div className="py-16 text-center text-sm text-muted-foreground">
+            <div className="py-16 text-center text-muted-foreground text-sm">
               조건에 맞는 데이터가 없습니다
             </div>
           ) : (
@@ -268,7 +257,7 @@ export default function RankingPage() {
               return (
                 <div
                   key={entry.id}
-                  className={`cursor-pointer rounded-2xl border bg-card p-4 shadow-sm transition-colors ${
+                  className={`card-elevated p-4 transition-colors cursor-pointer ${
                     isMe
                       ? "border-primary/40 bg-primary/[0.04] ring-1 ring-primary/20"
                       : ""
@@ -276,7 +265,7 @@ export default function RankingPage() {
                   onClick={() => setExpandedId(isExpanded ? null : entry.id)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 shrink-0 text-center">
+                    <div className="shrink-0 w-9 text-center">
                       {entry.rank <= 3 ? (
                         <span
                           className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
@@ -296,7 +285,7 @@ export default function RankingPage() {
                       )}
                     </div>
 
-                    <div className="min-w-0 flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-baseline gap-2">
                         <span className="text-lg font-bold text-foreground">
                           {entry.score}
@@ -304,19 +293,18 @@ export default function RankingPage() {
                         <span className="text-xs text-muted-foreground">
                           점
                         </span>
-
                         {isMe && (
-                          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                          <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
                             나
                           </span>
                         )}
                       </div>
 
-                      <div className="mt-0.5 flex items-center gap-2">
+                      <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-xs text-muted-foreground">
                           GPA {entry.gpa}%
                         </span>
-                        <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                        <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground">
                           {entry.exam}
                         </span>
                         <span className="text-xs text-muted-foreground">
@@ -325,8 +313,8 @@ export default function RankingPage() {
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-2">
-                      <div className="hidden text-right sm:block">
+                    <div className="shrink-0 flex items-center gap-2">
+                      <div className="text-right hidden sm:block">
                         <p className="text-[10px] text-muted-foreground">
                           1순위
                         </p>
@@ -345,20 +333,20 @@ export default function RankingPage() {
                   </div>
 
                   {isExpanded && entry.schools.length > 0 && (
-                    <div className="mt-3 border-t border-border/50 pt-3">
-                      <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+                    <div className="mt-3 pt-3 border-t border-border/50">
+                      <p className="text-xs font-medium text-muted-foreground mb-1.5">
                         희망 학교
                       </p>
                       <div className="flex flex-wrap gap-1.5">
-                        {entry.schools.map((school, index) => (
+                        {entry.schools.map((s, i) => (
                           <span
-                            key={`${entry.id}-${school}-${index}`}
-                            className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs text-foreground"
+                            key={s}
+                            className="inline-flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-full text-foreground"
                           >
                             <span className="text-[10px] font-bold text-muted-foreground">
-                              {index + 1}
+                              {i + 1}
                             </span>
-                            {school}
+                            {s}
                           </span>
                         ))}
                       </div>
@@ -370,7 +358,7 @@ export default function RankingPage() {
           )}
         </div>
 
-        <p className="mt-4 text-center text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground text-center mt-4">
           ※ 본 데이터는 참고용이며, 실제 배정 결과와 다를 수 있습니다.
         </p>
       </div>
