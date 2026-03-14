@@ -1,7 +1,7 @@
 'use client';
-
+// CommunityWritePage.tsx
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -33,7 +33,7 @@ const typeOptions = [
 
 const topicOptions = ["행정·비자", "주거", "재정", "통신", "보험·의료", "학업", "생활·적응", "기타"];
 
-const MenuBar = ({ editor }: { editor: ReturnType<typeof useEditor> }) => {
+const MenuBar = ({ editor }: { editor: any }) => {
   if (!editor) return null;
 
   const btnClass = (active: boolean) =>
@@ -160,7 +160,7 @@ const TopicDropdown = ({ value, onChange }: { value: string; onChange: (v: strin
 };
 
 const CommunityWritePage = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [stage, setStage] = useState("");
   const [region, setRegion] = useState("");
@@ -174,6 +174,7 @@ const CommunityWritePage = () => {
       Placeholder.configure({ placeholder: "내용을 입력하세요..." }),
       Image,
     ],
+    immediatelyRender: false,
     editorProps: {
       attributes: {
         class: "prose prose-sm max-w-none min-h-[200px] p-4 focus:outline-none",
@@ -185,14 +186,14 @@ const CommunityWritePage = () => {
 
   const handleSubmit = () => {
     if (!canSubmit) return;
-    navigate("/community");
+    router.push("/community");
   };
 
   return (
     <div className="py-6 sm:py-10">
       <div className="container-tight">
         <button
-          onClick={() => navigate("/community")}
+          onClick={() => router.push("/community")}
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -290,7 +291,7 @@ const CommunityWritePage = () => {
           </div>
 
           <div className="flex gap-3 justify-end">
-            <Button variant="outline" onClick={() => navigate("/community")}>
+            <Button variant="outline" onClick={() => router.push("/community")}>
               취소
             </Button>
             <Button

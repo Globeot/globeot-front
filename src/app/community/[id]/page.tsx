@@ -1,5 +1,7 @@
+'use client';
+// CommunityDetailPage.tsx
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Bookmark, Flag, Trash2, Edit2, Send, CornerDownRight } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -43,7 +45,7 @@ const typeLabel: Record<string, string> = {
 
 const CommunityDetailPage = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [commentText, setCommentText] = useState("");
   const [replyTo, setReplyTo] = useState<number | null>(null);
   const [comments, setComments] = useState(mockComments);
@@ -72,7 +74,7 @@ const CommunityDetailPage = () => {
     <div className="py-6 sm:py-10">
       <div className="container-tight">
         <button
-          onClick={() => navigate("/community")}
+          onClick={() => router.push("/community")}
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />

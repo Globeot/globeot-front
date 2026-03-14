@@ -1,5 +1,5 @@
 'use client';
-
+// CommunityPage.tsx
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search, ShoppingBag, Users, HelpCircle, BookOpen, ChevronDown, FileText, Home, Wallet, Wifi, ShieldCheck, GraduationCap, Compass, MoreHorizontal } from "lucide-react";
@@ -204,7 +204,7 @@ const CommunityPage = () => {
             </div>
             <Button
               className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0"
-              onClick={() => navigate("/community/write")}
+              onClick={() => router.push("/community/write")}
             >
               ✍ 글쓰기
             </Button>
@@ -223,7 +223,7 @@ const CommunityPage = () => {
                 <div
                   key={post.id}
                   className="card-elevated p-4 cursor-pointer hover:border-primary/30 transition-colors border-l-[3px] border-l-primary/50 bg-primary/[0.03]"
-                  onClick={() => navigate(`/community/${post.id}`)}
+                  onClick={() => router.push(`/community/${post.id}`)}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
@@ -253,7 +253,7 @@ const CommunityPage = () => {
               <div
                 key={post.id}
                 className="card-elevated p-4 cursor-pointer hover:border-primary/30 transition-colors"
-                onClick={() => navigate(`/community/${post.id}`)}
+                onClick={() => router.push(`/community/${post.id}`)}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
