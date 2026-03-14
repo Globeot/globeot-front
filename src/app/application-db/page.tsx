@@ -1,0 +1,478 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Trophy, Upload, ImageIcon, X } from "lucide-react";
+import { Input } from "../../components/ui/input";
+import { Button } from "../../components/ui/button";
+import { Label } from "../../components/ui/label";
+/* ── School Autocomplete ── */
+const SchoolAutocomplete = ({
+  rank,
+  required,
+  value,
+  onChange,
+  exclude,
+}: {
+  rank: number;
+  required: boolean;
+  value: string;
+  onChange: (v: string) => void;
+  exclude: string[];
+}) => {
+  const [query, setQuery] = useState(value);
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const available = allSchools.filter((s) => !exclude.includes(s));
+  const suggestions = query
+    ? available.filter((s) => s.toLowerCase().includes(query.toLowerCase()))
+    : available;
+
+  const select = (s: string) => {
+    setQuery(s);
+    onChange(s);
+    setOpen(false);
+  };
+
+  const clear = () => {
+    setQuery("");
+    onChange("");
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap shrink-0 w-14">
+        {rank}순위{required ? " *" : ""}
+      </span>
+      <div className="relative flex-1" ref={ref}>
+        <Input
+          placeholder="학교 검색..."
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+            if (!e.target.value) onChange("");
+          }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+        />
+        {value && (
+          <button
+            onClick={clear}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+        {open && suggestions.length > 0 && (
+          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border rounded-lg shadow-md max-h-[180px] overflow-y-auto py-1">
+            {suggestions.map((s) => (
+              <button
+                key={s}
+                onMouseDown={() => select(s)}
+                className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "../../components/ui/table";
+
+/* ── Score Calculator (embedded) ── */
+type ExamType = "toefl" | "ielts";
+
+interface ScoreEntry {
+  id: number;
+  semester: string;
+  convertedScore: number;
+  gpaPercent: number;
+  examType: string;
+  rank: number;
+  schools: string[];
+  isMe?: boolean;
+}
+
+const mockData: ScoreEntry[] = [
+  {
+    id: 1,
+    semester: "2027-2",
+    convertedScore: 92.5,
+    gpaPercent: 95,
+    examType: "TOEFL",
+    rank: 1,
+    schools: ["뮌헨대학교", "베를린자유대학교", "하이델베르크대학교"],
+  },
+  {
+    id: 2,
+    semester: "2027-2",
+    convertedScore: 89.3,
+    gpaPercent: 90,
+    examType: "TOEFL",
+    rank: 2,
+    schools: ["UCLA", "UCL"],
+  },
+  {
+    id: 3,
+    semester: "2027-2",
+    convertedScore: 87.1,
+    gpaPercent: 88,
+    examType: "IELTS",
+    rank: 3,
+    schools: ["소르본대학교", "바르셀로나대학교", "뮌헨대학교"],
+  },
+  {
+    id: 4,
+    semester: "2027-1",
+    convertedScore: 85.4,
+    gpaPercent: 85,
+    examType: "TOEFL",
+    rank: 4,
+    schools: ["도쿄대학교"],
+  },
+  {
+    id: 5,
+    semester: "2027-1",
+    convertedScore: 83.2,
+    gpaPercent: 82,
+    examType: "IELTS",
+    rank: 5,
+    schools: ["UCL", "옥스퍼드대학교", "케임브리지대학교"],
+  },
+  {
+    id: 6,
+    semester: "2027-1",
+    convertedScore: 80.8,
+    gpaPercent: 80,
+    examType: "TOEFL",
+    rank: 6,
+    schools: ["바르셀로나대학교", "소르본대학교"],
+  },
+];
+
+const allSchools = [
+  "뮌헨대학교",
+  "소르본대학교",
+  "UCLA",
+  "바르셀로나대학교",
+  "도쿄대학교",
+  "UCL",
+  "베를린자유대학교",
+  "하이델베르크대학교",
+  "옥스퍼드대학교",
+  "케임브리지대학교",
+];
+
+type SemesterFilter = "all" | "2027-2" | "2027-1";
+
+const semesterOptions = ["2027-2", "2027-1"] as const;
+
+const ApplicationDBPage = () => {
+  const router = useRouter();
+  /* transcript submission state */
+
+  /* calculator state */
+  const [examType, setExamType] = useState<ExamType>("toefl");
+  const [gpa, setGpa] = useState("");
+  const [reading, setReading] = useState("");
+  const [listening, setListening] = useState("");
+  const [speaking, setSpeaking] = useState("");
+  const [writing, setWriting] = useState("");
+  const [calcResult, setCalcResult] = useState<number | null>(null);
+
+  /* upload form state */
+  const [certFile, setCertFile] = useState<File | null>(null);
+  const [applySemester, setApplySemester] = useState("");
+  const [schoolChoices, setSchoolChoices] = useState<string[]>([
+    "",
+    "",
+    "",
+    "",
+    "",
+  ]);
+
+  /* DB filter state */
+  const [semesterFilter, setSemesterFilter] = useState<SemesterFilter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const calculate = () => {
+    const g = parseFloat(gpa);
+    const r = parseFloat(reading);
+    const l = parseFloat(listening);
+    const s = parseFloat(speaking);
+    const w = parseFloat(writing);
+    if ([g, r, l, s, w].some(isNaN)) return;
+    let langScore: number;
+    if (examType === "toefl") {
+      langScore = ((r + l + s + w) / 120) * 40;
+    } else {
+      langScore = ((r + l + s + w) / 36) * 40;
+    }
+    const gpaPercent = (g / 4.3) * 100;
+    const gpaScore = (gpaPercent / 100) * 60;
+    setCalcResult(Math.round((gpaScore + langScore) * 100) / 100);
+  };
+
+  const calcValid = [gpa, reading, listening, speaking, writing].every(
+    (v) => v !== "",
+  );
+
+  const canSubmitTranscript =
+    certFile && applySemester && schoolChoices[0] && calcResult !== null;
+
+  const handleTranscriptSubmit = () => {
+    if (!canSubmitTranscript) return;
+    router.push("/application-db/ranking");
+  };
+
+  const updateSchoolChoice = (index: number, value: string) => {
+    const next = [...schoolChoices];
+    next[index] = value;
+    setSchoolChoices(next);
+  };
+
+  /* ─── Application form ─── */
+  return (
+    <div className="py-6 sm:py-10">
+      <div className="container-tight max-w-2xl">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+              지원 랭킹
+            </h1>
+          </div>
+          <p className="text-muted-foreground text-sm mb-8">
+            지원 인증을 완료하면 환산 점수 기반 랭킹을 확인할 수 있어요
+          </p>
+        </div>
+
+        {/* 1. Score Calculator */}
+        <section className="mb-8">
+          <h2 className="text-base font-bold text-foreground mb-4">
+            1. 환산 점수 계산
+          </h2>
+          <div className="flex gap-2 mb-4">
+            {(["toefl", "ielts"] as const).map((type) => (
+              <button
+                key={type}
+                onClick={() => {
+                  setExamType(type);
+                  setCalcResult(null);
+                }}
+                className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                  examType === type
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                {type.toUpperCase()}
+              </button>
+            ))}
+          </div>
+
+          <div className="card-elevated p-5 space-y-4">
+            <div>
+              <Label className="text-sm font-medium">GPA (4.3 만점)</Label>
+              <div className="flex items-center gap-3 mt-1.5">
+                <Input
+                  type="number"
+                  min={0}
+                  max={4.3}
+                  step={0.01}
+                  placeholder="예: 3.85"
+                  value={gpa}
+                  onChange={(e) => setGpa(e.target.value)}
+                  className="w-1/2"
+                />
+                {gpa && !isNaN(parseFloat(gpa)) && (
+                  <span className="text-sm text-muted-foreground">
+                    백분위 점수:{" "}
+                    <span className="font-semibold text-foreground">
+                      {((parseFloat(gpa) / 4.3) * 100).toFixed(1)}
+                    </span>
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                {
+                  label: "Reading",
+                  value: reading,
+                  setter: setReading,
+                  max: examType === "toefl" ? 30 : 9,
+                },
+                {
+                  label: "Listening",
+                  value: listening,
+                  setter: setListening,
+                  max: examType === "toefl" ? 30 : 9,
+                },
+                {
+                  label: "Speaking",
+                  value: speaking,
+                  setter: setSpeaking,
+                  max: examType === "toefl" ? 30 : 9,
+                },
+                {
+                  label: "Writing",
+                  value: writing,
+                  setter: setWriting,
+                  max: examType === "toefl" ? 30 : 9,
+                },
+              ].map((f) => (
+                <div key={f.label}>
+                  <Label className="text-sm font-medium">
+                    {f.label} (0~{f.max})
+                  </Label>
+                  {examType === "ielts" ? (
+                    <select
+                      value={f.value}
+                      onChange={(e) => f.setter(e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1.5"
+                    >
+                      <option value="">선택</option>
+                      {Array.from({ length: 11 }, (_, i) => 4 + i * 0.5).map(
+                        (v) => (
+                          <option key={v} value={v}>
+                            {v}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  ) : (
+                    <Input
+                      type="number"
+                      min={0}
+                      max={f.max}
+                      step={1}
+                      placeholder={`0~${f.max}`}
+                      value={f.value}
+                      onChange={(e) => f.setter(e.target.value)}
+                      className="mt-1.5"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+            <Button
+              className="w-full"
+              disabled={!calcValid}
+              onClick={calculate}
+            >
+              계산하기
+            </Button>
+          </div>
+
+          {calcResult !== null && (
+            <div className="mt-4 card-elevated p-5 text-center">
+              <p className="text-sm text-muted-foreground mb-1">
+                나의 환산 점수
+              </p>
+              <p className="text-3xl font-extrabold text-primary">
+                {calcResult}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">/ 100점 만점</p>
+            </div>
+          )}
+        </section>
+
+        {/* 2. 지원 인증 */}
+        <section className="mb-8">
+          <h2 className="text-base font-bold text-foreground mb-4">
+            2. 지원 인증
+          </h2>
+          <div className="card-elevated p-5 space-y-4">
+            <div>
+              <Label className="text-sm font-medium mb-1.5 block">
+                <ImageIcon className="inline h-4 w-4 mr-1" />
+                유레카 지원 확정 캡쳐본 (이미지)
+              </Label>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setCertFile(e.target.files?.[0] ?? null)}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* 3. Semester & 희망 학교 */}
+        <section className="mb-8">
+          <h2 className="text-base font-bold text-foreground mb-4">
+            3. 지원 학기 & 희망 학교
+          </h2>
+          <div className="card-elevated p-5 space-y-4">
+            <div>
+              <Label className="text-sm font-medium mb-2 block">
+                지원 학기
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {semesterOptions.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setApplySemester(s)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                      applySemester === s
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium mb-2 block">
+                <Trophy className="inline h-4 w-4 mr-1" />
+                희망 학교 (1~5순위)
+              </Label>
+              <div className="space-y-2">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <SchoolAutocomplete
+                    key={i}
+                    rank={i + 1}
+                    required={i === 0}
+                    value={schoolChoices[i]}
+                    onChange={(v) => updateSchoolChoice(i, v)}
+                    exclude={schoolChoices.filter(
+                      (s, idx) => idx !== i && s !== "",
+                    )}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <Button
+          className="w-full"
+          size="lg"
+          disabled={!canSubmitTranscript}
+          onClick={handleTranscriptSubmit}
+        >
+          <Upload className="h-4 w-4 mr-2" />
+          제출하기
+        </Button>
+        <p className="text-xs text-muted-foreground text-center mt-3">
+          ※ 제출 후 랭킹 테이블을 확인할 수 있습니다.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default ApplicationDBPage;
