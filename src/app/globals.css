@@ -3,25 +3,25 @@
 
 @theme {
   /* Ewha Theme Colors */
-  --color-background: hsl(40 20% 98%);
+  --color-background: hsl(0 0% 100%);
   --color-foreground: hsl(220 25% 12%);
   --color-card: hsl(0 0% 100%);
   --color-card-foreground: hsl(220 25% 12%);
   --color-popover: hsl(0 0% 100%);
   --color-popover-foreground: hsl(220 25% 12%);
-  --color-primary: hsl(165 55% 32%);
+  --color-primary: hsl(160 60% 38%);
   --color-primary-foreground: hsl(0 0% 100%);
-  --color-secondary: hsl(40 25% 94%);
+  --color-secondary: hsl(155 30% 95%);
   --color-secondary-foreground: hsl(220 25% 18%);
-  --color-muted: hsl(40 15% 94%);
+  --color-muted: hsl(210 15% 96%);
   --color-muted-foreground: hsl(220 10% 48%);
-  --color-accent: hsl(165 40% 92%);
+  --color-accent: hsl(155 45% 92%);
   --color-accent-foreground: hsl(165 55% 22%);
   --color-destructive: hsl(0 72% 51%);
   --color-destructive-foreground: hsl(0 0% 100%);
   --color-border: hsl(220 13% 90%);
   --color-input: hsl(220 13% 90%);
-  --color-ring: hsl(165 55% 32%);
+  --color-ring: hsl(160 60% 38%);
 
   /* Border Radius */
   --radius-lg: 0.75rem;
@@ -29,7 +29,7 @@
   --radius-sm: calc(0.75rem - 4px);
 
   /* Custom Tokens */
-  --color-ewha-green: hsl(165 55% 32%);
+  --color-ewha-green: hsl(160 60% 38%);
   --shadow-glow: 0 0 24px hsl(165 55% 32% / 0.15);
 }
 
