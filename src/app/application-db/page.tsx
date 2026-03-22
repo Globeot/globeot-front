@@ -6,6 +6,9 @@ import { Trophy, Upload, ImageIcon, X } from "lucide-react";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import { Label } from "../../components/ui/label";
+
+import { gpaToPercentile } from "./gpaData";
+
 /* ── School Autocomplete ── */
 const SchoolAutocomplete = ({
   rank,
@@ -82,85 +85,9 @@ const SchoolAutocomplete = ({
     </div>
   );
 };
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell,
-} from "../../components/ui/table";
 
 /* ── Score Calculator (embedded) ── */
 type ExamType = "toefl" | "ielts";
-
-interface ScoreEntry {
-  id: number;
-  semester: string;
-  convertedScore: number;
-  gpaPercent: number;
-  examType: string;
-  rank: number;
-  schools: string[];
-  isMe?: boolean;
-}
-
-const mockData: ScoreEntry[] = [
-  {
-    id: 1,
-    semester: "2027-2",
-    convertedScore: 92.5,
-    gpaPercent: 95,
-    examType: "TOEFL",
-    rank: 1,
-    schools: ["뮌헨대학교", "베를린자유대학교", "하이델베르크대학교"],
-  },
-  {
-    id: 2,
-    semester: "2027-2",
-    convertedScore: 89.3,
-    gpaPercent: 90,
-    examType: "TOEFL",
-    rank: 2,
-    schools: ["UCLA", "UCL"],
-  },
-  {
-    id: 3,
-    semester: "2027-2",
-    convertedScore: 87.1,
-    gpaPercent: 88,
-    examType: "IELTS",
-    rank: 3,
-    schools: ["소르본대학교", "바르셀로나대학교", "뮌헨대학교"],
-  },
-  {
-    id: 4,
-    semester: "2027-1",
-    convertedScore: 85.4,
-    gpaPercent: 85,
-    examType: "TOEFL",
-    rank: 4,
-    schools: ["도쿄대학교"],
-  },
-  {
-    id: 5,
-    semester: "2027-1",
-    convertedScore: 83.2,
-    gpaPercent: 82,
-    examType: "IELTS",
-    rank: 5,
-    schools: ["UCL", "옥스퍼드대학교", "케임브리지대학교"],
-  },
-  {
-    id: 6,
-    semester: "2027-1",
-    convertedScore: 80.8,
-    gpaPercent: 80,
-    examType: "TOEFL",
-    rank: 6,
-    schools: ["바르셀로나대학교", "소르본대학교"],
-  },
-];
 
 const allSchools = [
   "뮌헨대학교",
@@ -181,7 +108,6 @@ const semesterOptions = ["2027-2", "2027-1"] as const;
 
 const ApplicationDBPage = () => {
   const router = useRouter();
-  /* transcript submission state */
 
   /* calculator state */
   const [examType, setExamType] = useState<ExamType>("toefl");
@@ -203,26 +129,55 @@ const ApplicationDBPage = () => {
     "",
   ]);
 
-  /* DB filter state */
-  const [semesterFilter, setSemesterFilter] = useState<SemesterFilter>("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const ieltsToToefl: Record<number, number> = {
+    9: 30,
+    8.5: 28,
+    8: 27,
+    7.5: 25,
+    7: 22,
+    6.5: 19,
+    6: 16,
+    5.5: 12,
+    5: 8,
+    4.5: 4,
+    4: 0,
+  };
 
   const calculate = () => {
     const g = parseFloat(gpa);
-    const r = parseFloat(reading);
-    const l = parseFloat(listening);
-    const s = parseFloat(speaking);
-    const w = parseFloat(writing);
+    let r = parseFloat(reading);
+    let l = parseFloat(listening);
+    let s = parseFloat(speaking);
+    let w = parseFloat(writing);
+
     if ([g, r, l, s, w].some(isNaN)) return;
-    let langScore: number;
-    if (examType === "toefl") {
-      langScore = ((r + l + s + w) / 120) * 40;
-    } else {
-      langScore = ((r + l + s + w) / 36) * 40;
+    if (g > 4.3 || g < 0) return;
+
+    // IELTS → TOEFL 변환
+    if (examType === "ielts") {
+      r = ieltsToToefl[r];
+      l = ieltsToToefl[l];
+      s = ieltsToToefl[s];
+      w = ieltsToToefl[w];
+
+      if ([r, l, s, w].some((v) => v === undefined)) return;
     }
-    const gpaPercent = (g / 4.3) * 100;
-    const gpaScore = (gpaPercent / 100) * 60;
-    setCalcResult(Math.round((gpaScore + langScore) * 100) / 100);
+
+    // 👇 수정된 GPA 점수 계산 (백분위 / 2)
+    const gpaKey = g.toFixed(2);
+    const percentile = gpaToPercentile[gpaKey] || 0;
+    const gpaScore = percentile / 2;
+
+    // 영어 영역별 가중치
+    const readingScore = (r / 30) * 10;
+    const listeningScore = (l / 30) * 10;
+    const speakingScore = (s / 30) * 15;
+    const writingScore = (w / 30) * 15;
+
+    const finalScore =
+      gpaScore + readingScore + listeningScore + speakingScore + writingScore;
+
+    setCalcResult(Math.round(finalScore * 100) / 100);
   };
 
   const calcValid = [gpa, reading, listening, speaking, writing].every(
@@ -293,14 +248,23 @@ const ApplicationDBPage = () => {
                   step={0.01}
                   placeholder="예: 3.85"
                   value={gpa}
-                  onChange={(e) => setGpa(e.target.value)}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+
+                    if (val > 4.3) return;
+                    if (val < 0) return;
+
+                    setGpa(e.target.value);
+                  }}
                   className="w-1/2"
                 />
                 {gpa && !isNaN(parseFloat(gpa)) && (
                   <span className="text-sm text-muted-foreground">
                     백분위 점수:{" "}
                     <span className="font-semibold text-foreground">
-                      {((parseFloat(gpa) / 4.3) * 100).toFixed(1)}
+                      {gpaToPercentile[parseFloat(gpa).toFixed(2)] !== undefined
+                        ? gpaToPercentile[parseFloat(gpa).toFixed(2)].toFixed(1)
+                        : "환산 불가"}
                     </span>
                   </span>
                 )}
@@ -344,7 +308,7 @@ const ApplicationDBPage = () => {
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1.5"
                     >
                       <option value="">선택</option>
-                      {Array.from({ length: 11 }, (_, i) => 4 + i * 0.5).map(
+                      {Array.from({ length: 19 }, (_, i) => i * 0.5).map(
                         (v) => (
                           <option key={v} value={v}>
                             {v}
@@ -360,7 +324,12 @@ const ApplicationDBPage = () => {
                       step={1}
                       placeholder={`0~${f.max}`}
                       value={f.value}
-                      onChange={(e) => f.setter(e.target.value)}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        if (val > f.max) return;
+                        if (val < 0) return;
+                        f.setter(e.target.value);
+                      }}
                       className="mt-1.5"
                     />
                   )}
