@@ -9,6 +9,8 @@ import { Label } from "../../components/ui/label";
 
 import { gpaToPercentile } from "./gpaData";
 
+import { ImageUploadButton } from "../../components/tiptap-ui/image-upload-button";
+
 /* ── School Autocomplete ── */
 const SchoolAutocomplete = ({
   rank,
@@ -120,6 +122,7 @@ const ApplicationDBPage = () => {
 
   /* upload form state */
   const [certFile, setCertFile] = useState<File | null>(null);
+  const [scoreFile, setScoreFile] = useState<File | null>(null);
   const [applySemester, setApplySemester] = useState("");
   const [schoolChoices, setSchoolChoices] = useState<string[]>([
     "",
@@ -185,7 +188,11 @@ const ApplicationDBPage = () => {
   );
 
   const canSubmitTranscript =
-    certFile && applySemester && schoolChoices[0] && calcResult !== null;
+    certFile &&
+    scoreFile &&
+    applySemester &&
+    schoolChoices[0] &&
+    calcResult !== null;
 
   const handleTranscriptSubmit = () => {
     if (!canSubmitTranscript) return;
@@ -364,16 +371,55 @@ const ApplicationDBPage = () => {
             2. 지원 인증
           </h2>
           <div className="card-elevated p-5 space-y-4">
-            <div>
-              <Label className="text-sm font-medium mb-1.5 block">
-                <ImageIcon className="inline h-4 w-4 mr-1" />
-                유레카 지원 확정 캡쳐본 (이미지)
-              </Label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setCertFile(e.target.files?.[0] ?? null)}
-              />
+            <div className="space-y-4">
+              {/* 이미지 */}
+              <div>
+                <Label className="text-sm font-medium mb-1.5 block">
+                  <ImageIcon className="inline h-4 w-4 mr-1" />
+                  유레카 지원 확정 캡쳐본 (이미지)
+                </Label>
+
+                <ImageUploadButton
+                  label="이미지 업로드"
+                  onUpload={async (file: File) => {
+                    setCertFile(file);
+                  }}
+                />
+
+                {certFile && (
+                  <div className="mt-2 flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                    <span className="truncate">{certFile.name}</span>
+                    <button onClick={() => setCertFile(null)}>
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* 어학성적표 */}
+              <div>
+                <Label className="text-sm font-medium mb-1.5 block">
+                  <Upload className="inline h-4 w-4 mr-1" />
+                  어학성적표 (PDF 또는 이미지)
+                </Label>
+
+                <ImageUploadButton
+                  label="파일 업로드"
+                  accept="application/pdf,image/*"
+                  onUpload={async (file: File) => {
+                    setScoreFile(file);
+                  }}
+                />
+
+                {scoreFile && (
+                  <div className="mt-2 flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                    <span className="truncate">{scoreFile.name}</span>
+                    <button onClick={() => setScoreFile(null)}>
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>
