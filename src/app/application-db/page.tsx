@@ -77,7 +77,7 @@ const SchoolAutocomplete = ({
               <button
                 key={s}
                 onMouseDown={() => select(s)}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors"
+                className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors cursor-pointer"
               >
                 {s}
               </button>
@@ -365,34 +365,42 @@ const ApplicationDBPage = () => {
           )}
         </section>
 
-        {/* 인증 */}
-        <section className="mb-8">
-          <h2 className="text-base font-bold text-foreground mb-4">
-            2. 지원 인증
-          </h2>
+       {/* 인증 */}
+<section className="mb-8">
+  <h2 className="text-base font-bold text-foreground mb-4">
+    2. 지원 인증
+  </h2>
 
-          <div className="card-elevated p-5 space-y-4">
-            {/* 유레카 */}
-            <div>
-              <Label className="text-sm font-medium mb-1.5 block">
-                <ImageIcon className="inline h-4 w-4 mr-1" />
-                유레카 지원 확정 캡쳐본 (이미지)
-              </Label>
+  <div className="card-elevated p-5 space-y-4">
+    {/* 유레카 지원 확정 캡쳐본 */}
+    <div>
+      <Label className="text-sm font-medium mb-1.5 block">
+        <ImageIcon className="inline h-4 w-4 mr-1" />
+        유레카 지원 확정 캡쳐본 (이미지)
+      </Label>
 
-              <ImageUploadButton onUpload={(file) => setCertFile(file)} />
-            </div>
+      {/* ✅ files[0]을 추출하여 setCertFile에 저장 */}
+      <ImageUploadButton 
+        onUpload={(files) => setCertFile(files[0])} 
+        allowPdf={false} // 유레카는 이미지만
+      />
+    </div>
 
-            {/* 어학성적표 */}
-            <div>
-              <Label className="text-sm font-medium mb-1.5 block">
-                <Upload className="inline h-4 w-4 mr-1" />
-                어학성적표 (PDF 또는 이미지)
-              </Label>
+    {/* 어학성적표 */}
+    <div>
+      <Label className="text-sm font-medium mb-1.5 block">
+        <Upload className="inline h-4 w-4 mr-1" />
+        어학성적표 (PDF 또는 이미지)
+      </Label>
 
-              <ImageUploadButton onUpload={(file) => setScoreFile(file)} />
-            </div>
-          </div>
-        </section>
+      {/* ✅ 중복되었던 setScoreFile 확인 및 allowPdf 유지 */}
+      <ImageUploadButton 
+        onUpload={(files) => setScoreFile(files[0])} 
+        allowPdf={true} 
+      />
+    </div>
+  </div>
+</section>
 
         {/* 학기 & 희망 학교 */}
         <section className="mb-8">
