@@ -82,7 +82,7 @@ const GNB = () => {
                 return (
                   <Link
                     key={item.path}
-                    to={item.path}
+                    href={item.path}
                     onClick={() => setMobileOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                       isActive
@@ -96,10 +96,10 @@ const GNB = () => {
                 );
               })}
               <div className="mt-3 pt-3 border-t flex flex-col gap-2">
-                <Link to="/login" onClick={() => setMobileOpen(false)}>
+                <Link href="/login" onClick={() => setMobileOpen(false)}>
                   <Button variant="outline" className="w-full">로그인</Button>
                 </Link>
-                <Link to="/mypage" onClick={() => setMobileOpen(false)}>
+                <Link href="/mypage" onClick={() => setMobileOpen(false)}>
                   <Button className="w-full bg-primary text-primary-foreground">마이페이지</Button>
                 </Link>
               </div>
