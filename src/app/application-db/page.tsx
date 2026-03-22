@@ -8,10 +8,9 @@ import { Button } from "../../components/ui/button";
 import { Label } from "../../components/ui/label";
 
 import { gpaToPercentile } from "./gpaData";
-
 import { ImageUploadButton } from "../../components/tiptap-ui/image-upload-button";
 
-/* ── School Autocomplete ── */
+/* ── 희망학교 선택 UI ── */
 const SchoolAutocomplete = ({
   rank,
   required,
@@ -25,6 +24,7 @@ const SchoolAutocomplete = ({
   onChange: (v: string) => void;
   exclude: string[];
 }) => {
+  //학교 검색
   const [query, setQuery] = useState(value);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -34,6 +34,7 @@ const SchoolAutocomplete = ({
     ? available.filter((s) => s.toLowerCase().includes(query.toLowerCase()))
     : available;
 
+  //학교 선택
   const select = (s: string) => {
     setQuery(s);
     onChange(s);
@@ -88,9 +89,9 @@ const SchoolAutocomplete = ({
   );
 };
 
-/* ── Score Calculator (embedded) ── */
 type ExamType = "toefl" | "ielts";
 
+//‼️
 const allSchools = [
   "뮌헨대학교",
   "소르본대학교",
@@ -104,14 +105,13 @@ const allSchools = [
   "케임브리지대학교",
 ];
 
-type SemesterFilter = "all" | "2027-2" | "2027-1";
-
 const semesterOptions = ["2027-2", "2027-1"] as const;
 
+/* ── ranking page 제출 ── */
 const ApplicationDBPage = () => {
   const router = useRouter();
 
-  /* calculator state */
+  /* 환산계산기 state */
   const [examType, setExamType] = useState<ExamType>("toefl");
   const [gpa, setGpa] = useState("");
   const [reading, setReading] = useState("");
@@ -120,7 +120,7 @@ const ApplicationDBPage = () => {
   const [writing, setWriting] = useState("");
   const [calcResult, setCalcResult] = useState<number | null>(null);
 
-  /* upload form state */
+  /* 업로드 state */
   const [certFile, setCertFile] = useState<File | null>(null);
   const [scoreFile, setScoreFile] = useState<File | null>(null);
   const [applySemester, setApplySemester] = useState("");
@@ -156,7 +156,7 @@ const ApplicationDBPage = () => {
     if ([g, r, l, s, w].some(isNaN)) return;
     if (g > 4.3 || g < 0) return;
 
-    // IELTS → TOEFL 변환
+    // IELTS -> TOEFL 변환
     if (examType === "ielts") {
       r = ieltsToToefl[r];
       l = ieltsToToefl[l];
@@ -166,7 +166,7 @@ const ApplicationDBPage = () => {
       if ([r, l, s, w].some((v) => v === undefined)) return;
     }
 
-    // 👇 수정된 GPA 점수 계산 (백분위 / 2)
+    //백분위
     const gpaKey = g.toFixed(2);
     const percentile = gpaToPercentile[gpaKey] || 0;
     const gpaScore = percentile / 2;
@@ -179,7 +179,6 @@ const ApplicationDBPage = () => {
 
     const finalScore =
       gpaScore + readingScore + listeningScore + speakingScore + writingScore;
-
     setCalcResult(Math.round(finalScore * 100) / 100);
   };
 
@@ -194,6 +193,7 @@ const ApplicationDBPage = () => {
     schoolChoices[0] &&
     calcResult !== null;
 
+  //‼️제출+페이지 넘어감
   const handleTranscriptSubmit = () => {
     if (!canSubmitTranscript) return;
     router.push("/application-db/ranking");
@@ -220,7 +220,7 @@ const ApplicationDBPage = () => {
           </p>
         </div>
 
-        {/* 1. Score Calculator */}
+        {/* 점수계산기 */}
         <section className="mb-8">
           <h2 className="text-base font-bold text-foreground mb-4">
             1. 환산 점수 계산
@@ -365,66 +365,36 @@ const ApplicationDBPage = () => {
           )}
         </section>
 
-        {/* 2. 지원 인증 */}
+        {/* 인증 */}
         <section className="mb-8">
           <h2 className="text-base font-bold text-foreground mb-4">
             2. 지원 인증
           </h2>
+
           <div className="card-elevated p-5 space-y-4">
-            <div className="space-y-4">
-              {/* 이미지 */}
-              <div>
-                <Label className="text-sm font-medium mb-1.5 block">
-                  <ImageIcon className="inline h-4 w-4 mr-1" />
-                  유레카 지원 확정 캡쳐본 (이미지)
-                </Label>
+            {/* 유레카 */}
+            <div>
+              <Label className="text-sm font-medium mb-1.5 block">
+                <ImageIcon className="inline h-4 w-4 mr-1" />
+                유레카 지원 확정 캡쳐본 (이미지)
+              </Label>
 
-                <ImageUploadButton
-                  label="이미지 업로드"
-                  onUpload={async (file: File) => {
-                    setCertFile(file);
-                  }}
-                />
+              <ImageUploadButton onUpload={(file) => setCertFile(file)} />
+            </div>
 
-                {certFile && (
-                  <div className="mt-2 flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                    <span className="truncate">{certFile.name}</span>
-                    <button onClick={() => setCertFile(null)}>
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
+            {/* 어학성적표 */}
+            <div>
+              <Label className="text-sm font-medium mb-1.5 block">
+                <Upload className="inline h-4 w-4 mr-1" />
+                어학성적표 (PDF 또는 이미지)
+              </Label>
 
-              {/* 어학성적표 */}
-              <div>
-                <Label className="text-sm font-medium mb-1.5 block">
-                  <Upload className="inline h-4 w-4 mr-1" />
-                  어학성적표 (PDF 또는 이미지)
-                </Label>
-
-                <ImageUploadButton
-                  label="파일 업로드"
-                  accept="application/pdf,image/*"
-                  onUpload={async (file: File) => {
-                    setScoreFile(file);
-                  }}
-                />
-
-                {scoreFile && (
-                  <div className="mt-2 flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                    <span className="truncate">{scoreFile.name}</span>
-                    <button onClick={() => setScoreFile(null)}>
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
+              <ImageUploadButton onUpload={(file) => setScoreFile(file)} />
             </div>
           </div>
         </section>
 
-        {/* 3. Semester & 희망 학교 */}
+        {/* 학기 & 희망 학교 */}
         <section className="mb-8">
           <h2 className="text-base font-bold text-foreground mb-4">
             3. 지원 학기 & 희망 학교

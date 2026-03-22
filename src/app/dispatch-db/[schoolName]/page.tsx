@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -33,7 +32,7 @@ interface DispatchEntry {
   semester: string;
   convertedScore: number;
 }
-
+//커뮤니티글 구조
 interface CommunityPost {
   id: number;
   title: string;
@@ -42,7 +41,7 @@ interface CommunityPost {
   comments: number;
   stage: "pre" | "abroad" | "returned";
 }
-
+//학교 상세정보 구조
 interface SchoolInfo {
   country: string;
   city: string;
@@ -60,6 +59,7 @@ interface SchoolInfo {
   communityPosts: CommunityPost[];
 }
 
+//‼️ 목업데이터
 const allData: Record<string, SchoolInfo> = {
   UCLA: {
     country: "미국",
@@ -150,6 +150,7 @@ export default function SchoolDetailPage() {
 
   const schoolName = params.schoolName;
   const decoded = decodeURIComponent(schoolName || "");
+  //‼️ 목업데이터
   const school = allData[decoded];
 
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -168,6 +169,7 @@ export default function SchoolDetailPage() {
     );
   }
 
+  //‼️ 점수데이터
   const entries = school.entries;
 
   const avgScore =
@@ -316,6 +318,7 @@ export default function SchoolDetailPage() {
         <h2 className="font-bold mb-3">💬 관련 커뮤니티 글</h2>
 
         <div className="space-y-2 mb-4">
+          {/*‼️ 서버에서 데이터 가져오기 */}
           {pagedPosts.map((post) => (
             <Link
               key={post.id}

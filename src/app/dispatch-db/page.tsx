@@ -3,10 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
-
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
-
 import {
   Table,
   TableHeader,
@@ -27,6 +25,7 @@ interface DispatchEntry {
   website: string;
 }
 
+//‼️목업데이터
 const mockData: DispatchEntry[] = [
   {
     id: 1,
@@ -108,6 +107,7 @@ export default function DispatchDBPage() {
   const [scoreRange, setScoreRange] = useState(scoreRanges[0]);
   const [page, setPage] = useState(1);
 
+  //‼️검색창+필터링 결과
   const filtered = mockData.filter((entry) => {
     if (
       schoolSearch &&
@@ -216,6 +216,7 @@ export default function DispatchDBPage() {
                   <TableRow key={entry.id}>
                     <TableCell className="text-sm text-muted-foreground">
                       <button
+                        //‼️ 서버 검색
                         onClick={() => {
                           setSchoolSearch(entry.country);
                           setPage(1);
@@ -228,6 +229,7 @@ export default function DispatchDBPage() {
 
                     <TableCell className="text-sm text-muted-foreground">
                       <button
+                        //‼️ 서버 검색
                         onClick={() => {
                           setSchoolSearch(entry.city);
                           setPage(1);
@@ -245,6 +247,7 @@ export default function DispatchDBPage() {
                             `/dispatch-db/${encodeURIComponent(entry.school)}`,
                           )
                         }
+                        //‼️ 해당 학교 데이터
                         className="text-sm font-medium text-primary hover:underline"
                       >
                         {entry.school}
@@ -317,7 +320,7 @@ export default function DispatchDBPage() {
         )}
 
         <p className="text-xs text-muted-foreground text-center mt-4">
-          ※ 실제 배정 결과와 다를 수 있습니다.
+          ※ 본 데이터는 참고용이며, 최종 정보는 학내 공식 사이트를 확인해주세요.
         </p>
       </div>
     </div>

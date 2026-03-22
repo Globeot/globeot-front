@@ -1,3 +1,4 @@
+//gpa -> 백분위 환산 함수
 export const gpaToPercentile: Record<string, number> = {};
 
 for (let i = 0; i <= 430; i++) {

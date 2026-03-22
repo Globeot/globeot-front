@@ -14,6 +14,7 @@ import {
 import { Input } from "../../../components/ui/input";
 import { Button } from "../../../components/ui/button";
 
+//랭킹 데이터
 interface RankEntry {
   id: number;
   semester: string;
@@ -24,6 +25,7 @@ interface RankEntry {
   isMe?: boolean;
 }
 
+//‼️목업데이터
 const mockRanking: RankEntry[] = [
   {
     id: 1,
@@ -107,8 +109,9 @@ export default function RankingPage() {
   const router = useRouter();
   const [semesterFilter, setSemesterFilter] = useState<SemesterFilter>("all");
   const [schoolSearch, setSchoolSearch] = useState("");
-  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null); //순위 펼쳐진 카드?
 
+  //‼️ 목업데이터
   const filtered = [...mockRanking]
     .filter((e) => {
       if (semesterFilter !== "all" && e.semester !== semesterFilter)
@@ -117,15 +120,17 @@ export default function RankingPage() {
         return false;
       return true;
     })
-    .sort((a, b) => b.score - a.score)
-    .map((e, i) => ({ ...e, rank: i + 1 }));
+    .sort((a, b) => b.score - a.score) //점수순 정렬
+    .map((e, i) => ({ ...e, rank: i + 1 })); //순위추가
 
+  //‼️ userID로 본인정보
   const me = filtered.find((e) => e.isMe);
   const totalCount = filtered.length;
 
   return (
     <div className="py-6 sm:py-10">
       <div className="container-tight">
+        {/*뒤로가기 버튼*/}
         <div className="mb-1 flex items-center gap-3">
           <Button
             variant="ghost"
@@ -139,11 +144,11 @@ export default function RankingPage() {
             지원 랭킹
           </h1>
         </div>
-
         <p className="text-muted-foreground text-sm mb-6 ml-9">
           환산 점수 기준 전체 랭킹 · 참고용 데이터입니다
         </p>
 
+        {/*‼️내 정보, 학교 리스트*/}
         {me && (
           <div className="card-elevated p-5 mb-6 border-l-4 border-l-primary bg-primary/[0.03]">
             <div className="flex items-center justify-between gap-4">
@@ -235,6 +240,7 @@ export default function RankingPage() {
 
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            {/* 검색창 */}
             <Input
               placeholder="학교명으로 검색..."
               value={schoolSearch}
@@ -243,7 +249,7 @@ export default function RankingPage() {
             />
           </div>
         </div>
-
+        {/* 랭킹 리스트 */}
         <div className="space-y-2">
           {filtered.length === 0 ? (
             <div className="py-16 text-center text-muted-foreground text-sm">
