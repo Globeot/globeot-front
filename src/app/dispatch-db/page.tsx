@@ -91,11 +91,13 @@ const mockData: DispatchEntry[] = [
 
 const scoreRanges = [
   { label: "전체", min: 0, max: 100 },
-  { label: "90–94", min: 90, max: 94 },
-  { label: "85–89", min: 85, max: 89 },
-  { label: "80–84", min: 80, max: 84 },
-  { label: "75–79", min: 75, max: 79 },
-  { label: "70–74", min: 70, max: 74 },
+  { label: "100–96", min: 96, max: 100 },
+  { label: "95–90", min: 90, max: 95 },
+  { label: "89–85", min: 85, max: 89 },
+  { label: "84–80", min: 80, max: 84 },
+  { label: "79–75", min: 75, max: 79 },
+  { label: "74–70", min: 70, max: 74 },
+  { label: "점수 없음", min: -1, max: -1 },
 ];
 
 const PAGE_SIZE = 20;
@@ -117,7 +119,11 @@ export default function DispatchDBPage() {
     ) {
       return false;
     }
-
+    if (scoreRange.label === "점수 없음") {
+      return (
+        entry.convertedScore === null || entry.convertedScore === undefined
+      );
+    }
     if (
       scoreRange.label !== "전체" &&
       (entry.convertedScore < scoreRange.min ||

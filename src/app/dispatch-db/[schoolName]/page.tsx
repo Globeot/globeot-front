@@ -136,6 +136,14 @@ const stageLabelMap: Record<string, string> = {
   returned: "파견 후",
 };
 
+const getLevelStyle = (level: string) => {
+  if (level === "상") return "bg-green-100 text-green-700";
+  if (level === "중") return "bg-yellow-100 text-yellow-700";
+  if (level === "하") return "bg-gray-100 text-gray-700";
+  if (level === "최상") return "bg-red-100 text-red-700";
+  return "bg-gray-100 text-gray-700";
+};
+
 const stageBadgeMap: Record<string, string> = {
   pre: "status-badge-pre",
   abroad: "status-badge-abroad",
@@ -172,11 +180,21 @@ export default function SchoolDetailPage() {
   //‼️ 점수데이터
   const entries = school.entries;
 
-  const avgScore =
-    entries.reduce((sum, e) => sum + e.convertedScore, 0) / entries.length;
+  const hasScore = entries.length > 0;
 
-  const maxScore = Math.max(...entries.map((e) => e.convertedScore));
-  const minScore = Math.min(...entries.map((e) => e.convertedScore));
+  const avgScore = hasScore
+    ? (
+        entries.reduce((sum, e) => sum + e.convertedScore, 0) / entries.length
+      ).toFixed(1)
+    : null;
+
+  const maxScore = hasScore
+    ? Math.max(...entries.map((e) => e.convertedScore))
+    : null;
+
+  const minScore = hasScore
+    ? Math.min(...entries.map((e) => e.convertedScore))
+    : null;
 
   const totalPostPages = Math.max(
     1,
@@ -210,12 +228,18 @@ export default function SchoolDetailPage() {
         </button>
 
         {/* Photo */}
-        <div className="rounded-xl overflow-hidden mb-6 aspect-[2/1]">
-          <img
-            src={school.photo}
-            alt={decoded}
-            className="w-full h-full object-cover"
-          />
+        <div className="mb-6">
+          <div className="rounded-xl overflow-hidden aspect-[2/1]">
+            <img
+              src={school.photo}
+              alt={decoded}
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          <p className="text-[10px] text-muted-foreground mt-1 text-right">
+            *Images from Wikimedia Commons
+          </p>
         </div>
 
         {/* Title */}
@@ -245,26 +269,70 @@ export default function SchoolDetailPage() {
 
         {/* Info */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          <div className="card-elevated p-4">
-            <Plane className="h-4 w-4 text-primary mb-1" />
-            <p className="text-xs text-muted-foreground">여행 접근성</p>
-            <span className="text-sm font-semibold">{school.travelAccess}</span>
-            <p className="text-xs">{school.travelAccessDesc}</p>
+          <div className="card-elevated p-5">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Plane className="h-4 w-4 text-primary" />
+                <p className="text-sm text-muted-foreground">여행 접근성</p>
+              </div>
+
+              <span
+                className={`text-sm font-bold px-3 py-1 rounded-full ${getLevelStyle(school.travelAccess)}`}
+              >
+                {school.travelAccess}
+              </span>
+            </div>
+
+            <p className="text-sm font-medium">{school.travelAccessDesc}</p>
           </div>
 
-          <div className="card-elevated p-4">
-            <DollarSign className="h-4 w-4 text-primary mb-1" />
-            <p className="text-xs text-muted-foreground">월 생활비</p>
-            <span className={`text-xs px-2 py-1 rounded ${livingCostColor}`}>
-              {school.livingCostLevel}
-            </span>
-            <p className="text-sm font-semibold">{school.livingCost}</p>
+          <div className="card-elevated p-5">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-primary" />
+                <p className="text-sm text-muted-foreground">월 생활비</p>
+              </div>
+
+              <span
+                className={`text-sm font-bold px-3 py-1 rounded-full ${getLevelStyle(school.livingCostLevel)}`}
+              >
+                {school.livingCostLevel}
+              </span>
+            </div>
+
+            <p className="text-lg font-semibold">{school.livingCost}</p>
           </div>
 
-          <div className="card-elevated p-4">
-            <Users className="h-4 w-4 text-primary mb-1" />
-            <p className="text-xs text-muted-foreground">국제학생 비율</p>
-            <p className="text-sm font-semibold">{school.internationalRatio}</p>
+          <div className="card-elevated p-5 hover:shadow-md transition">
+            {/* 헤더 */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" />
+                <p className="text-sm text-muted-foreground">국제학생 비율</p>
+              </div>
+
+              <span className="text-sm font-bold px-3 py-1 rounded-full bg-yellow-100 text-yellow-700">
+                중
+              </span>
+            </div>
+
+            <p className="text-lg font-semibold">{school.internationalRatio}</p>
+
+            <div className="flex items-center gap-2 mt-2">
+              <span className="w-2 h-2 rounded-full bg-green-500" />
+              <p className="text-xs text-muted-foreground">
+                버디 프로그램 운영 중
+              </p>
+            </div>
+
+            <a
+              href={school.exchangeWebsite}
+              target="_blank"
+              className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              국제교류처 사이트
+              <ExternalLink className="h-3 w-3" />
+            </a>
           </div>
         </div>
 
@@ -273,19 +341,19 @@ export default function SchoolDetailPage() {
           <div className="card-elevated p-4 text-center">
             <TrendingUp className="h-4 w-4 mx-auto mb-1 text-primary" />
             <p className="text-xs text-muted-foreground">평균 점수</p>
-            <p className="text-lg font-bold">{avgScore.toFixed(1)}</p>
+            <p className="text-lg font-bold">{avgScore ?? "-"}</p>
           </div>
 
           <div className="card-elevated p-4 text-center">
             <BarChart3 className="h-4 w-4 mx-auto mb-1 text-primary" />
             <p className="text-xs text-muted-foreground">최고 점수</p>
-            <p className="text-lg font-bold">{maxScore}</p>
+            <p className="text-lg font-bold">{avgScore ?? "-"}</p>
           </div>
 
           <div className="card-elevated p-4 text-center">
             <BarChart3 className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
             <p className="text-xs text-muted-foreground">최저 점수</p>
-            <p className="text-lg font-bold">{minScore}</p>
+            <p className="text-lg font-bold">{avgScore ?? "-"}</p>
           </div>
         </div>
 
@@ -302,14 +370,25 @@ export default function SchoolDetailPage() {
             </TableHeader>
 
             <TableBody>
-              {entries.map((e) => (
-                <TableRow key={e.id}>
-                  <TableCell>{e.semester}</TableCell>
-                  <TableCell className="text-right font-semibold">
-                    {e.convertedScore}
+              {entries.length > 0 ? (
+                entries.map((e) => (
+                  <TableRow key={e.id}>
+                    <TableCell>{e.semester}</TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {e.convertedScore}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={2}
+                    className="text-center text-muted-foreground py-6"
+                  >
+                    과거 배정 데이터가 없습니다.
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </div>
@@ -318,28 +397,40 @@ export default function SchoolDetailPage() {
         <h2 className="font-bold mb-3">💬 관련 커뮤니티 글</h2>
 
         <div className="space-y-2 mb-4">
-          {/*‼️ 서버에서 데이터 가져오기 */}
-          {pagedPosts.map((post) => (
-            <Link
-              key={post.id}
-              href={`/community/${post.id}`}
-              className="card-elevated p-4 flex justify-between block"
-            >
-              <div>
-                <span className={stageBadgeMap[post.stage]}>
-                  {stageLabelMap[post.stage]}
-                </span>
+          {/*‼️서버에서 값 가져오기*/}
+          {pagedPosts.length > 0 ? (
+            pagedPosts.map((post) => (
+              <Link
+                key={post.id}
+                href={`/community/${post.id}`}
+                className="card-elevated p-4 flex justify-between block"
+              >
+                <div>
+                  <span className={stageBadgeMap[post.stage]}>
+                    {stageLabelMap[post.stage]}
+                  </span>
 
-                <h3 className="text-sm font-semibold mt-1">{post.title}</h3>
-              </div>
+                  <h3 className="text-sm font-semibold mt-1">{post.title}</h3>
+                </div>
 
-              <div className="text-right text-xs text-muted-foreground">
-                <p>{post.author}</p>
-                <p>{post.date}</p>
-                <p>💬 {post.comments}</p>
-              </div>
-            </Link>
-          ))}
+                <div className="text-right text-xs text-muted-foreground">
+                  <p>{post.author}</p>
+                  <p>{post.date}</p>
+                  <p>💬 {post.comments}</p>
+                </div>
+              </Link>
+            ))
+          ) : (
+            <div className="text-center py-10 text-muted-foreground">
+              <p className="mb-2">아직 관련 글이 없습니다.</p>
+              <Link
+                href="/community/write"
+                className="text-primary underline text-sm"
+              >
+                첫 글 작성하기
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Pagination */}
