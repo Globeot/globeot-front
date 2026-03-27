@@ -71,17 +71,26 @@ const SchoolAutocomplete = ({
             <X className="h-3.5 w-3.5" />
           </button>
         )}
-        {open && suggestions.length > 0 && (
+        {open && (
           <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border rounded-lg shadow-md max-h-[180px] overflow-y-auto py-1">
-            {suggestions.map((s) => (
+            {suggestions.length > 0 ? (
+              suggestions.map((s) => (
+                <button
+                  key={s}
+                  onMouseDown={() => select(s)}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                >
+                  {s}
+                </button>
+              ))
+            ) : (
               <button
-                key={s}
-                onMouseDown={() => select(s)}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors cursor-pointer"
+                onMouseDown={() => select(query)}
+                className="w-full text-left px-3 py-2 text-sm text-primary hover:bg-muted"
               >
-                {s}
+                ➕ "{query}" 추가하기
               </button>
-            ))}
+            )}
           </div>
         )}
       </div>
@@ -365,42 +374,45 @@ const ApplicationDBPage = () => {
           )}
         </section>
 
-       {/* 인증 */}
-<section className="mb-8">
-  <h2 className="text-base font-bold text-foreground mb-4">
-    2. 지원 인증
-  </h2>
+        {/* 인증 */}
+        <section className="mb-8">
+          <h2 className="text-base font-bold text-foreground mb-4">
+            2. 지원 인증
+          </h2>
 
-  <div className="card-elevated p-5 space-y-4">
-    {/* 유레카 지원 확정 캡쳐본 */}
-    <div>
-      <Label className="text-sm font-medium mb-1.5 block">
-        <ImageIcon className="inline h-4 w-4 mr-1" />
-        유레카 지원 확정 캡쳐본 (이미지)
-      </Label>
+          <div className="card-elevated p-5 space-y-4">
+            {/* 유레카 지원 확정 캡쳐본 */}
+            <div>
+              <Label className="text-sm font-medium mb-1.5 block">
+                <ImageIcon className="inline h-4 w-4 mr-1" />
+                유레카 지원 확정 캡쳐본,GPA (이미지)
+              </Label>
 
-      {/* ✅ files[0]을 추출하여 setCertFile에 저장 */}
-      <ImageUploadButton 
-        onUpload={(files) => setCertFile(files[0])} 
-        allowPdf={false} // 유레카는 이미지만
-      />
-    </div>
+              <ImageUploadButton
+                onUpload={(files) => setCertFile(files[0])}
+                allowPdf={false} // 유레카는 이미지만
+              />
+              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                ※ GPA 성적표 업로드 시, ‘네이버 시계 + 노트북 시계 + 유레카 교환
+                신청 화면 + 성적표 점수’ 네 창이 함께 보이도록 배치하여
+                캡쳐해주세요.
+              </p>
+            </div>
 
-    {/* 어학성적표 */}
-    <div>
-      <Label className="text-sm font-medium mb-1.5 block">
-        <Upload className="inline h-4 w-4 mr-1" />
-        어학성적표 (PDF 또는 이미지)
-      </Label>
+            {/* 어학성적표 */}
+            <div>
+              <Label className="text-sm font-medium mb-1.5 block">
+                <Upload className="inline h-4 w-4 mr-1" />
+                어학성적표 (PDF 또는 이미지)
+              </Label>
 
-      {/* ✅ 중복되었던 setScoreFile 확인 및 allowPdf 유지 */}
-      <ImageUploadButton 
-        onUpload={(files) => setScoreFile(files[0])} 
-        allowPdf={true} 
-      />
-    </div>
-  </div>
-</section>
+              <ImageUploadButton
+                onUpload={(files) => setScoreFile(files[0])}
+                allowPdf={true}
+              />
+            </div>
+          </div>
+        </section>
 
         {/* 학기 & 희망 학교 */}
         <section className="mb-8">

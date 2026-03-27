@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
 import {
   Search,
   Medal,
@@ -110,13 +112,25 @@ export default function RankingPage() {
   const [semesterFilter, setSemesterFilter] = useState<SemesterFilter>("all");
   const [schoolSearch, setSchoolSearch] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null); //순위 펼쳐진 카드?
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(schoolSearch);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [schoolSearch]);
 
   //‼️ 목업데이터
   const filtered = [...mockRanking]
     .filter((e) => {
       if (semesterFilter !== "all" && e.semester !== semesterFilter)
         return false;
-      if (schoolSearch && !e.schools.some((s) => s.includes(schoolSearch)))
+      if (
+        debouncedSearch &&
+        !e.schools.some((s) => s.includes(debouncedSearch))
+      )
         return false;
       return true;
     })
@@ -205,15 +219,6 @@ export default function RankingPage() {
               명
             </span>
           </div>
-
-          {me && (
-            <div className="text-sm text-muted-foreground">
-              상위{" "}
-              <span className="font-semibold text-primary">
-                {Math.round((me.rank / totalCount) * 100)}%
-              </span>
-            </div>
-          )}
         </div>
 
         <div className="space-y-3 mb-5">

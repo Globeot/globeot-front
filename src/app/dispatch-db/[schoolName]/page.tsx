@@ -347,13 +347,13 @@ export default function SchoolDetailPage() {
           <div className="card-elevated p-4 text-center">
             <BarChart3 className="h-4 w-4 mx-auto mb-1 text-primary" />
             <p className="text-xs text-muted-foreground">최고 점수</p>
-            <p className="text-lg font-bold">{avgScore ?? "-"}</p>
+            <p className="text-lg font-bold">{maxScore ?? "-"}</p>
           </div>
 
           <div className="card-elevated p-4 text-center">
             <BarChart3 className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
             <p className="text-xs text-muted-foreground">최저 점수</p>
-            <p className="text-lg font-bold">{avgScore ?? "-"}</p>
+            <p className="text-lg font-bold">{minScore ?? "-"}</p>
           </div>
         </div>
 
