@@ -202,7 +202,7 @@ const ApplicationDBPage = () => {
     schoolChoices[0] &&
     calcResult !== null;
 
-  //‼️제출+페이지 넘어감
+
   const handleTranscriptSubmit = () => {
     if (!canSubmitTranscript) return;
     router.push("/application-db/ranking");

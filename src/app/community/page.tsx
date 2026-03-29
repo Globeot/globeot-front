@@ -2,7 +2,7 @@
 // CommunityPage.tsx
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Search, ShoppingBag, Users, HelpCircle, BookOpen, ChevronDown, FileText, Home, Wallet, Wifi, ShieldCheck, GraduationCap, Compass, MoreHorizontal } from "lucide-react";
+import { Search, ShoppingBag, Users, HelpCircle, BookOpen, ChevronDown, FileText, Home, Wallet, Wifi, ShieldCheck, GraduationCap, Compass, MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 
@@ -25,11 +25,11 @@ interface MockPost {
 }
 
 const mockPosts: MockPost[] = [
-  { id: 1, title: "독일 뮌헨대 기숙사 신청 방법 아시는 분?", stage: "pre_depart", region: "유럽", type: "question", school: "뮌헨대학교", author: "민지", date: "2026.02.20", comments: 5 },
+  { id: 1, title: "독일 뮌헨대 기숙사 신청 방법 아시는 분?", stage: "pre_depart", region: "유럽", type: "question", topic: "주거", school: "뮌헨대학교", author: "민지", date: "2026.02.20", comments: 5 },
   { id: 2, title: "파리 원룸 짐 정리 물품 팝니다", stage: "abroad", region: "유럽", type: "trade", school: "소르본대학교", author: "수빈", date: "2026.02.19", comments: 3, tradeDone: true },
   { id: 3, title: "바르셀로나 3월 여행 동행 구합니다", stage: "abroad", region: "유럽", type: "companion", school: "바르셀로나대학교", author: "하연", date: "2026.02.18", comments: 8 },
-  { id: 4, title: "UCLA 수강신청 팁 공유합니다", stage: "pre_assign", region: "북미", type: "question", school: "UCLA", author: "지은", date: "2026.02.17", comments: 12 },
-  { id: 5, title: "도쿄대 비자 서류 질문이요!", stage: "pre_depart", region: "아시아", type: "question", school: "도쿄대학교", author: "채원", date: "2026.02.16", comments: 2 },
+  { id: 4, title: "UCLA 수강신청 팁 공유합니다", stage: "pre_assign", region: "북미", type: "question", topic: "학업", school: "UCLA", author: "지은", date: "2026.02.17", comments: 12 },
+  { id: 5, title: "도쿄대 비자 서류 질문이요!", stage: "pre_depart", region: "아시아", type: "question", topic: "행정·비자", school: "도쿄대학교", author: "채원", date: "2026.02.16", comments: 2 },
   { id: 6, title: "런던 한인마트 근처 물품 교환해요", stage: "abroad", region: "유럽", type: "trade", school: "UCL", author: "소연", date: "2026.02.15", comments: 1 },
   { id: 7, title: "귀국 후 학점 이전 절차 정리합니다", stage: "returned", region: "유럽", type: "info", topic: "학업", author: "예진", date: "2026.02.14", comments: 9 },
   { id: 8, title: "귀국 후 역적응 극복 팁 공유해요", stage: "returned", region: "북미", type: "info", topic: "생활·적응", author: "서윤", date: "2026.02.13", comments: 6 },
@@ -88,6 +88,10 @@ const CommunityPage = () => {
   const [topicOpen, setTopicOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const postsPerPage = 10; // 한 페이지에 보일 글의 개수
+
+  // 필터링 및 검색된 전체 게시글
   const filtered = mockPosts.filter((p) => {
     if (stageFilter !== "all" && p.stage !== stageFilter) return false;
     if (regionFilter !== "all") {
@@ -96,9 +100,26 @@ const CommunityPage = () => {
     }
     if (typeFilter !== "all" && p.type !== typeFilter) return false;
     if (topicFilter !== "all" && p.topic !== topicFilter) return false;
-    if (searchQuery && !p.title.includes(searchQuery)) return false;
+    
+    if (searchQuery) {
+      const normalizedQuery = searchQuery.replace(/\s+/g, "").toLowerCase();
+      const normalizedTitle = p.title.replace(/\s+/g, "").toLowerCase();
+      
+      if (!normalizedTitle.includes(normalizedQuery)) return false;
+    }
     return true;
   });
+
+  const totalPages = Math.ceil(filtered.length / postsPerPage);
+  
+  const indexOfLastPost = currentPage * postsPerPage;
+  const indexOfFirstPost = indexOfLastPost - postsPerPage;
+  const currentPosts = filtered.slice(indexOfFirstPost, indexOfLastPost);
+
+  const handleFilterChange = (setter: Function, value: any) => {
+    setter(value);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="py-6 sm:py-10">
@@ -115,7 +136,7 @@ const CommunityPage = () => {
             {(["all", "pre_assign", "pre_depart", "abroad", "returned"] as const).map((s) => (
               <button
                 key={s}
-                onClick={() => setStageFilter(s)}
+                onClick={() => handleFilterChange(setStageFilter, s)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                   stageFilter === s
                     ? "bg-primary text-primary-foreground"
@@ -132,7 +153,7 @@ const CommunityPage = () => {
             {(["all", "europe", "america", "asia", "oceania"] as const).map((r) => (
               <button
                 key={r}
-                onClick={() => setRegionFilter(r)}
+                onClick={() => handleFilterChange(setRegionFilter, r)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                   regionFilter === r
                     ? "bg-primary text-primary-foreground"
@@ -149,7 +170,10 @@ const CommunityPage = () => {
             {(["all", "question", "info", "trade", "companion"] as const).map((t) => (
               <button
                 key={t}
-                onClick={() => { setTypeFilter(t); if (t !== "info") setTopicFilter("all"); }}
+                onClick={() => {
+                  handleFilterChange(setTypeFilter, t);
+                  if (t !== "question" && t !== "info") setTopicFilter("all"); 
+                }}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                   typeFilter === t
                     ? "bg-primary text-primary-foreground"
@@ -161,8 +185,7 @@ const CommunityPage = () => {
             ))}
           </div>
 
-          {/* Topic filter - visible when type is "info" or "all" */}
-          {(typeFilter === "info" || typeFilter === "all") && (
+          {(typeFilter === "question" || typeFilter === "info") && (
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-muted-foreground mr-1">주제</span>
               <div className="relative">
@@ -178,7 +201,7 @@ const CommunityPage = () => {
                     {topicOptions.map((c) => (
                       <button
                         key={c}
-                        onClick={() => { setTopicFilter(c); setTopicOpen(false); }}
+                        onClick={() => { handleFilterChange(setTopicFilter, c); setTopicOpen(false); }}
                         className={`w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors ${
                           topicFilter === c ? "text-primary font-medium" : "text-foreground"
                         }`}
@@ -198,7 +221,10 @@ const CommunityPage = () => {
               <Input
                 placeholder="키워드로 검색..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1); // 검색어가 바뀌면 1페이지로
+                }}
                 className="pl-9"
               />
             </div>
@@ -212,47 +238,20 @@ const CommunityPage = () => {
         </div>
 
         {/* Post List */}
-        <div className="space-y-2">
+        <div className="space-y-2 mb-6">
           {filtered.length === 0 && (
             <div className="py-16 text-center text-muted-foreground text-sm">게시글이 없습니다.</div>
           )}
-          {filtered.map((post) => {
-            const isInfo = post.type === "info";
-            if (isInfo) {
-              return (
-                <div
-                  key={post.id}
-                  className="card-elevated p-4 cursor-pointer hover:border-primary/30 transition-colors border-l-[3px] border-l-primary/50 bg-primary/[0.03]"
-                  onClick={() => router.push(`/community/${post.id}`)}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <span className={stageBadgeMap[post.stage]}>
-                          {stageLabelMap[post.stage]}
-                        </span>
-                        {post.topic && (
-                          <span className="inline-flex items-center gap-1 text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium">
-                            {topicIconMap[post.topic]}
-                            {post.topic}
-                          </span>
-                        )}
-                        <span className="text-xs text-muted-foreground">{post.region}</span>
-                      </div>
-                      <h3 className="text-sm font-semibold text-foreground truncate">{post.title}</h3>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs text-muted-foreground">{post.author} · {post.date}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">💬 {post.comments}</p>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
+          
+          {currentPosts.map((post) => {
+            const isQuestionOrInfo = post.type === "question" || post.type === "info";
+            
             return (
               <div
                 key={post.id}
-                className="card-elevated p-4 cursor-pointer hover:border-primary/30 transition-colors"
+                className={`card-elevated p-4 cursor-pointer hover:border-primary/30 transition-colors ${
+                  isQuestionOrInfo ? "border-l-[3px] border-l-primary/50 bg-primary/[0.03]" : ""
+                }`}
                 onClick={() => router.push(`/community/${post.id}`)}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -265,13 +264,24 @@ const CommunityPage = () => {
                         {typeIcon[post.type]}
                         {typeLabel[post.type]}
                       </span>
-                      <span className="text-xs text-muted-foreground">{post.region}</span>
+                      {isQuestionOrInfo && post.topic && (
+                        <span className="inline-flex items-center gap-1 text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium">
+                          {topicIconMap[post.topic]}
+                          {post.topic}
+                        </span>
+                      )}
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                        {post.region}
+                      </span>
                     </div>
-                    <h3 className={`text-sm font-semibold truncate ${post.tradeDone ? "line-through text-muted-foreground" : "text-foreground"}`}>{post.title}</h3>
+
+                    <h3 className={`text-sm font-semibold truncate ${post.tradeDone ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                      {post.title}
+                    </h3>
                   </div>
+
                   <div className="text-right shrink-0">
-                    <p className="text-xs text-muted-foreground">{post.author}</p>
-                    <p className="text-xs text-muted-foreground">{post.date}</p>
+                    <p className="text-xs text-muted-foreground">{post.author} · {post.date}</p>
                     <p className="text-xs text-muted-foreground mt-1">💬 {post.comments}</p>
                   </div>
                 </div>
@@ -279,6 +289,45 @@ const CommunityPage = () => {
             );
           })}
         </div>
+
+        {/* 페이지네이션 UI */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-1 mt-6">
+            <button
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="p-2 rounded-md hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+            </button>
+            
+            {[...Array(totalPages)].map((_, i) => {
+              const pageNumber = i + 1;
+              return (
+                <button
+                  key={pageNumber}
+                  onClick={() => setCurrentPage(pageNumber)}
+                  className={`w-8 h-8 text-sm font-medium rounded-md transition-colors ${
+                    currentPage === pageNumber
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {pageNumber}
+                </button>
+              );
+            })}
+
+            <button
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-md hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </div>
+        )}
+
       </div>
     </div>
   );

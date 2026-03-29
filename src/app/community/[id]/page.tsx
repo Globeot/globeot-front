@@ -2,10 +2,13 @@
 // CommunityDetailPage.tsx
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Bookmark, Flag, Trash2, Edit2, Send, CornerDownRight } from "lucide-react";
+import { ArrowLeft, Bookmark, Flag, Trash2, Edit2, Send, CornerDownRight, FileText, Home, Wallet, Wifi, ShieldCheck, GraduationCap, Compass, MoreHorizontal } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Separator } from "../../../components/ui/separator";
+
+type StageFilter = "pre_assign" | "pre_depart" | "abroad" | "returned";
+type TopicFilter = "행정·비자" | "주거" | "재정" | "통신" | "보험·医疗" | "학업" | "생활·적응" | "기타";
 
 interface Comment {
   id: number;
@@ -20,9 +23,10 @@ const mockPost = {
   title: "독일 뮌헨대 기숙사 신청 방법 아시는 분?",
   content:
     "안녕하세요! 2026년 1학기에 뮌헨대로 교환 예정인데, 기숙사 신청 절차가 궁금합니다.\n\n기숙사 종류가 여러 개라고 들었는데 어떤 걸 추천하시나요? Studentenwerk 기숙사랑 사설 기숙사 중에 고민하고 있어요.\n\n경험 있으신 분 공유해주시면 감사하겠습니다!",
-  stage: "pre" as const,
+  stage: "pre_depart" as StageFilter,
   region: "유럽",
   type: "question",
+  topic: "주거" as TopicFilter,
   author: "민지",
   date: "2026.02.20",
   views: 128,
@@ -41,6 +45,32 @@ const typeLabel: Record<string, string> = {
   question: "질문",
   trade: "중고거래",
   companion: "동행",
+  info: "정보",
+};
+
+const stageLabelMap: Record<string, string> = {
+  pre_assign: "배정 전",
+  pre_depart: "파견 전",
+  abroad: "파견 중",
+  returned: "파견 후",
+};
+
+const stageBadgeMap: Record<string, string> = {
+  pre_assign: "status-badge-pre",
+  pre_depart: "status-badge-pre",
+  abroad: "status-badge-abroad",
+  returned: "status-badge-returned",
+};
+
+const topicIconMap: Record<string, React.ReactNode> = {
+  "행정·비자": <FileText className="h-3 w-3" />,
+  "주거": <Home className="h-3 w-3" />,
+  "재정": <Wallet className="h-3 w-3" />,
+  "통신": <Wifi className="h-3 w-3" />,
+  "보험·医疗": <ShieldCheck className="h-3 w-3" />,
+  "학업": <GraduationCap className="h-3 w-3" />,
+  "생활·적응": <Compass className="h-3 w-3" />,
+  "기타": <MoreHorizontal className="h-3 w-3" />,
 };
 
 const CommunityDetailPage = () => {
@@ -52,9 +82,13 @@ const CommunityDetailPage = () => {
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   const post = mockPost;
+  const isQuestionOrInfo = post.type === "question" || post.type === "info";
+
+  const isCommentEmpty = !commentText.trim();
 
   const handleSubmitComment = () => {
-    if (!commentText.trim()) return;
+    if (isCommentEmpty) return;
+
     const newComment: Comment = {
       id: comments.length + 1,
       author: "나",
@@ -81,25 +115,34 @@ const CommunityDetailPage = () => {
           목록으로
         </button>
 
-        <article className="card-elevated p-5 sm:p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <span className={
-              post.stage === "pre" ? "status-badge-pre" :
-              post.stage === "abroad" ? "status-badge-abroad" : "status-badge-returned"
-            }>
-              {post.stage === "pre" ? "배정 전" : post.stage === "abroad" ? "파견 중" : "파견 후"}
+        {/* 게시글 영역 */}
+        <article className={`card-elevated p-5 sm:p-6 ${
+          isQuestionOrInfo ? "border-l-[3px] border-l-primary/50 bg-primary/[0.03]" : ""
+        }`}>
+          <div className="flex items-center gap-2 mb-3.5 flex-wrap">
+            <span className={stageBadgeMap[post.stage]}>
+              {stageLabelMap[post.stage]}
             </span>
-            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
               {typeLabel[post.type]}
             </span>
-            <span className="text-xs text-muted-foreground">{post.region}</span>
+            {isQuestionOrInfo && post.topic && (
+              <span className="inline-flex items-center gap-1 text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium">
+                {topicIconMap[post.topic]}
+                {post.topic}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+              {post.region}
+            </span>
           </div>
 
-          <h1 className="text-lg sm:text-xl font-bold text-foreground mb-3">{post.title}</h1>
+          <h1 className="text-lg sm:text-2xl font-bold text-foreground mb-3">{post.title}</h1>
 
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
             <div className="flex items-center gap-2">
               <span className="font-medium text-foreground">{post.author}</span>
+              <Separator orientation="vertical" className="h-3" />
               <span>{post.date}</span>
             </div>
             <div className="flex items-center gap-3">
@@ -108,9 +151,9 @@ const CommunityDetailPage = () => {
             </div>
           </div>
 
-          <Separator className="mb-4" />
+          <Separator className="mb-5" />
 
-          <div className="text-sm text-foreground leading-relaxed whitespace-pre-line mb-6">
+          <div className="text-sm sm:text-base text-foreground leading-relaxed whitespace-pre-line mb-8">
             {post.content}
           </div>
 
@@ -119,28 +162,30 @@ const CommunityDetailPage = () => {
               variant={isBookmarked ? "default" : "outline"}
               size="sm"
               onClick={() => setIsBookmarked(!isBookmarked)}
+              className="rounded-full"
             >
-              <Bookmark className={`h-4 w-4 mr-1 ${isBookmarked ? "fill-current" : ""}`} />
+              <Bookmark className={`h-4 w-4 mr-1.5 ${isBookmarked ? "fill-current" : ""}`} />
               {isBookmarked ? "스크랩됨" : "스크랩"}
             </Button>
-            <Button variant="outline" size="sm">
-              <Flag className="h-4 w-4 mr-1" />
+            <Button variant="outline" size="sm" className="rounded-full">
+              <Flag className="h-4 w-4 mr-1.5 text-destructive" />
               신고
             </Button>
             <div className="flex-1" />
-            <Button variant="ghost" size="sm" className="text-muted-foreground">
-              <Edit2 className="h-4 w-4 mr-1" />
+            <Button variant="ghost" size="sm" className="text-muted-foreground rounded-full">
+              <Edit2 className="h-4 w-4 mr-1.5" />
               수정
             </Button>
-            <Button variant="ghost" size="sm" className="text-destructive">
-              <Trash2 className="h-4 w-4 mr-1" />
+            <Button variant="ghost" size="sm" className="text-destructive rounded-full hover:bg-destructive/10">
+              <Trash2 className="h-4 w-4 mr-1.5" />
               삭제
             </Button>
           </div>
         </article>
 
-        <div className="mt-6">
-          <h2 className="text-sm font-bold text-foreground mb-4">댓글 {comments.length}</h2>
+        {/* 댓글 영역 */}
+        <div className="mt-8">
+          <h2 className="text-base font-bold text-foreground mb-5">댓글 {comments.length}</h2>
 
           <div className="space-y-3">
             {topLevelComments.map((comment) => (
@@ -152,17 +197,20 @@ const CommunityDetailPage = () => {
                   </div>
                   <p className="text-sm text-foreground leading-relaxed">{comment.content}</p>
                   <button
-                    onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
-                    className="text-xs text-primary mt-2 hover:underline"
+                    onClick={() => {
+                      setReplyTo(replyTo === comment.id ? null : comment.id);
+                      setCommentText("");
+                    }}
+                    className="text-xs text-primary mt-2.5 hover:underline font-medium"
                   >
-                    답글
+                    답글 달기
                   </button>
                 </div>
 
                 {getReplies(comment.id).map((reply) => (
-                  <div key={reply.id} className="ml-6 mt-2 card-elevated p-4 border-l-2 border-primary/20">
+                  <div key={reply.id} className="ml-6 mt-2 card-elevated p-4 border-l-2 border-primary/20 bg-muted/30">
                     <div className="flex items-center gap-1.5 mb-1.5">
-                      <CornerDownRight className="h-3 w-3 text-muted-foreground" />
+                      <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground" />
                       <span className="text-sm font-medium text-foreground">{reply.author}</span>
                       <span className="text-xs text-muted-foreground">{reply.date}</span>
                     </div>
@@ -173,13 +221,18 @@ const CommunityDetailPage = () => {
                 {replyTo === comment.id && (
                   <div className="ml-6 mt-2 flex gap-2">
                     <Input
-                      placeholder="답글을 입력하세요..."
+                      placeholder={`${comment.author}님에게 답글 입력...`}
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSubmitComment()}
-                      className="text-sm"
+                      className="text-sm bg-card"
                     />
-                    <Button size="sm" onClick={handleSubmitComment}>
+                    <Button 
+                      size="sm" 
+                      onClick={handleSubmitComment} 
+                      className="shrink-0"
+                      disabled={isCommentEmpty}
+                    >
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>
@@ -188,15 +241,20 @@ const CommunityDetailPage = () => {
             ))}
           </div>
 
-          <div className="flex gap-2 mt-4">
+          <div className="flex gap-2 mt-5 bg-card p-3 rounded-xl border shadow-sm">
             <Input
               placeholder={replyTo !== null ? "답글을 입력하세요..." : "댓글을 입력하세요..."}
               value={replyTo === null ? commentText : ""}
               onChange={(e) => { if (replyTo === null) setCommentText(e.target.value); }}
               onKeyDown={(e) => { if (replyTo === null && e.key === "Enter") handleSubmitComment(); }}
+              className="bg-muted/50 border-none"
             />
-            <Button onClick={() => { if (replyTo === null) handleSubmitComment(); }} disabled={replyTo !== null}>
-              <Send className="h-4 w-4 mr-1" />
+            <Button 
+              onClick={() => { if (replyTo === null) handleSubmitComment(); }} 
+              disabled={replyTo !== null || isCommentEmpty} // 💡 대댓글 모드이거나 비어있으면 비활성화
+              className="shrink-0"
+            >
+              <Send className="h-4 w-4 mr-1.5" />
               등록
             </Button>
           </div>
