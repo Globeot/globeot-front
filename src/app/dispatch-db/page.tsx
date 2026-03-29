@@ -97,6 +97,7 @@ const scoreRanges = [
   { label: "84–80", min: 80, max: 84 },
   { label: "79–75", min: 75, max: 79 },
   { label: "74–70", min: 70, max: 74 },
+  { label: "69 이하", min: 0, max: 69 },
   { label: "점수 없음", min: -1, max: -1 },
 ];
 

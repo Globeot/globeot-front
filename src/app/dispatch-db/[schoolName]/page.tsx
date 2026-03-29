@@ -268,70 +268,101 @@ export default function SchoolDetailPage() {
         </div>
 
         {/* Info */}
+        {/* Info Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          <div className="card-elevated p-5">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Plane className="h-4 w-4 text-primary" />
-                <p className="text-sm text-muted-foreground">여행 접근성</p>
-              </div>
+          {/* 유명한 전공 */}
+          <div className="card-elevated p-4">
+            <GraduationCap className="h-4 w-4 text-primary mb-1" />
+            <p className="text-xs text-muted-foreground">유명한 전공</p>
+
+            <div className="flex flex-wrap gap-1 mt-1">
+              {school.famousMajors.map((m) => (
+                <span
+                  key={m}
+                  className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-full"
+                >
+                  {m}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* 여행 접근성 */}
+          <div className="card-elevated p-4">
+            <Plane className="h-4 w-4 text-primary mb-1" />
+
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <p className="text-xs text-muted-foreground">여행접근성</p>
 
               <span
-                className={`text-sm font-bold px-3 py-1 rounded-full ${getLevelStyle(school.travelAccess)}`}
+                className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
+                  school.travelAccess === "상"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-yellow-100 text-yellow-700"
+                }`}
               >
                 {school.travelAccess}
               </span>
             </div>
 
-            <p className="text-sm font-medium">{school.travelAccessDesc}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {school.travelAccessDesc}
+            </p>
           </div>
 
-          <div className="card-elevated p-5">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-primary" />
-                <p className="text-sm text-muted-foreground">월 생활비</p>
-              </div>
+          {/* 생활비 */}
+          <div className="card-elevated p-4">
+            <DollarSign className="h-4 w-4 text-primary mb-1" />
+
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <p className="text-xs text-muted-foreground">예상 월 생활비</p>
 
               <span
-                className={`text-sm font-bold px-3 py-1 rounded-full ${getLevelStyle(school.livingCostLevel)}`}
+                className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
+                  school.livingCostLevel === "최상"
+                    ? "bg-red-100 text-red-700"
+                    : school.livingCostLevel === "상"
+                      ? "bg-orange-100 text-orange-700"
+                      : school.livingCostLevel === "중"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-green-100 text-green-700"
+                }`}
               >
                 {school.livingCostLevel}
               </span>
             </div>
 
-            <p className="text-lg font-semibold">{school.livingCost}</p>
+            <p className="text-sm font-semibold">{school.livingCost}</p>
           </div>
 
-          <div className="card-elevated p-5 hover:shadow-md transition">
-            {/* 헤더 */}
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
-                <p className="text-sm text-muted-foreground">국제학생 비율</p>
-              </div>
+          {/* 국제학생 비율 */}
+          <div className="card-elevated p-4">
+            <Users className="h-4 w-4 text-primary mb-1" />
+            <p className="text-xs text-muted-foreground">국제학생 비율</p>
+            <p className="text-sm font-semibold">{school.internationalRatio}</p>
+          </div>
 
-              <span className="text-sm font-bold px-3 py-1 rounded-full bg-yellow-100 text-yellow-700">
-                중
-              </span>
-            </div>
+          {/* 버디 프로그램 */}
+          <div className="card-elevated p-4">
+            <Heart className="h-4 w-4 text-primary mb-1" />
+            <p className="text-xs text-muted-foreground">버디 프로그램</p>
+            <p className="text-sm font-semibold">{school.buddyProgram}</p>
+          </div>
 
-            <p className="text-lg font-semibold">{school.internationalRatio}</p>
-
-            <div className="flex items-center gap-2 mt-2">
-              <span className="w-2 h-2 rounded-full bg-green-500" />
-              <p className="text-xs text-muted-foreground">
-                버디 프로그램 운영 중
-              </p>
-            </div>
+          {/* 공식 사이트 */}
+          <div className="card-elevated p-4">
+            <ExternalLink className="h-4 w-4 text-primary mb-1" />
+            <p className="text-xs text-muted-foreground">
+              공식 교환학생 사이트
+            </p>
 
             <a
               href={school.exchangeWebsite}
               target="_blank"
-              className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+              rel="noopener noreferrer"
+              className="text-sm font-semibold text-primary hover:underline"
             >
-              국제교류처 사이트
-              <ExternalLink className="h-3 w-3" />
+              바로가기 ↗
             </a>
           </div>
         </div>
