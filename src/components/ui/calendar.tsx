@@ -116,9 +116,17 @@ function Calendar({ ...props }: CalendarProps) {
           display: none !important;
         }
 
-        .rdp {
+        .rdp,
+        .rdp-root {
           box-sizing: border-box;
           margin: 0 !important;
+          /* react-day-picker 색상은 내부 CSS 변수(--rdp-*)로 결정 */
+          --rdp-accent-color: var(--color-primary) !important;
+          --rdp-accent-background-color: var(--color-accent) !important;
+          --rdp-today-color: var(--color-primary) !important;
+          --rdp-range_middle-color: var(--color-accent-foreground) !important;
+          --rdp-range_start-color: var(--color-primary-foreground) !important;
+          --rdp-range_end-color: var(--color-primary-foreground) !important;
         }
 
         /* 두 달 가로 배치 */
@@ -176,14 +184,14 @@ function Calendar({ ...props }: CalendarProps) {
         }
 
         .rdp-day_selected {
-          background: #2563eb !important;
-          color: white !important;
+          background: var(--color-primary) !important;
+          color: var(--color-primary-foreground) !important;
           font-weight: 600 !important;
         }
 
         .rdp-day_today {
-          border: 1px solid #2563eb !important;
-          color: #2563eb !important;
+          border: 1px solid var(--color-primary) !important;
+          color: var(--color-primary) !important;
           font-weight: 600 !important;
         }
 

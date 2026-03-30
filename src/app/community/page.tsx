@@ -244,13 +244,13 @@ const CommunityPage = () => {
           )}
           
           {currentPosts.map((post) => {
-            const isQuestionOrInfo = post.type === "question" || post.type === "info";
+            const isInfo = post.type === "info";
             
             return (
               <div
                 key={post.id}
                 className={`card-elevated p-4 cursor-pointer hover:border-primary/30 transition-colors ${
-                  isQuestionOrInfo ? "border-l-[3px] border-l-primary/50 bg-primary/[0.03]" : ""
+                  isInfo ? "border-l-[3px] border-l-green-500 bg-emerald-50/30" : ""
                 }`}
                 onClick={() => router.push(`/community/${post.id}`)}
               >
@@ -264,7 +264,7 @@ const CommunityPage = () => {
                         {typeIcon[post.type]}
                         {typeLabel[post.type]}
                       </span>
-                      {isQuestionOrInfo && post.topic && (
+                      {isInfo && post.topic && (
                         <span className="inline-flex items-center gap-1 text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium">
                           {topicIconMap[post.topic]}
                           {post.topic}

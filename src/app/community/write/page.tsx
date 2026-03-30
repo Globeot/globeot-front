@@ -16,7 +16,6 @@ import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Card, CardContent } from "../../../components/ui/card";
 
-import { addDays } from "date-fns";
 import { DayPicker, type DateRange } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 
@@ -172,10 +171,8 @@ const CommunityWritePage = () => {
   const [topic, setTopic] = useState("");
   const [school, setSchool] = useState("");
   const [isTradeDone, setIsTradeDone] = useState(false);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: new Date(),
-    to: addDays(new Date(), 30),
-  });
+  // 기본값은 "아무 날짜도 선택되지 않음" 상태로 둔다.
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -294,7 +291,7 @@ const CommunityWritePage = () => {
                 <CardContent className="p-2">
                   <DayPicker
                     mode="range"
-                    defaultMonth={dateRange?.from}
+                    defaultMonth={dateRange?.from ?? new Date()}
                     selected={dateRange}
                     onSelect={setDateRange}
                     numberOfMonths={2}
@@ -326,17 +323,17 @@ const CommunityWritePage = () => {
                         width: "100%",
                       },
                       day_selected: {
-                        backgroundColor: "#059669",
-                        color: "#ffffff",
+                        backgroundColor: "var(--color-primary)",
+                        color: "var(--color-primary-foreground)",
                         borderRadius: "50%",
                       },
                       day_range_middle: {
-                        backgroundColor: "#ecfdf5",
-                        color: "#065f46",
+                        backgroundColor: "var(--color-accent)",
+                        color: "var(--color-accent-foreground)",
                         borderRadius: "0",
                       },
                       nav_button: {
-                        color: "#059669",
+                        color: "var(--color-primary)",
                       }
                     }}
                   />
@@ -377,10 +374,18 @@ const CommunityWritePage = () => {
               .ProseMirror:focus { outline: none; }
 
               /* ────────── 캘린더 커스텀 스타일 ────────── */
-              .rdp {
+              .rdp,
+              .rdp-root {
                 --rdp-cell-size: 32px !important; 
                 --rdp-caption-font-size: 14px !important; 
                 margin: 0 auto !important;
+                /* react-day-picker 색상은 내부 CSS 변수(--rdp-*)로 결정 */
+                --rdp-accent-color: var(--color-primary) !important;
+                --rdp-accent-background-color: var(--color-accent) !important;
+                --rdp-today-color: var(--color-primary) !important;
+                --rdp-range_middle-color: var(--color-accent-foreground) !important;
+                --rdp-range_start-color: var(--color-primary-foreground) !important;
+                --rdp-range_end-color: var(--color-primary-foreground) !important;
               }
               .rdp-day {
                 font-size: 12px !important; 
@@ -390,20 +395,37 @@ const CommunityWritePage = () => {
               .rdp .rdp-day_selected:hover,
               .rdp .rdp-day_selected:focus,
               .rdp .rdp-day_selected:active {
-                background-color: #059669 !important; 
-                color: #ffffff !important;
+                background-color: var(--color-primary) !important; 
+                color: var(--color-primary-foreground) !important;
                 opacity: 1 !important;
+              }
+
+              /* range 시작/끝이 .rdp-day_selected로만 덮이지 않는 경우를 대비 */
+              .rdp .rdp-day_range_start,
+              .rdp .rdp-day_range_end,
+              .rdp .rdp-day_range_start:hover,
+              .rdp .rdp-day_range_end:hover {
+                background-color: var(--color-primary) !important;
+                color: var(--color-primary-foreground) !important;
+                opacity: 1 !important;
+              }
+
+              /* "오늘" 테두리가 기본 blue로 남는 케이스 방지 */
+              .rdp .rdp-day_today {
+                border: 1px solid var(--color-primary) !important;
+                color: var(--color-primary) !important;
+                font-weight: 600 !important;
               }
 
               .rdp .rdp-day_range_middle,
               .rdp .rdp-day_range_middle:hover {
-                background-color: #ecfdf5 !important; 
-                color: #065f46 !important; 
+                background-color: var(--color-accent) !important; 
+                color: var(--color-accent-foreground) !important; 
                 border-radius: 0px !important;
               }
 
               .rdp .rdp-nav_button {
-                color: #059669 !important;
+                color: var(--color-primary) !important;
               }
 
               /* ────────── Tiptap Placeholder 스타일 ────────── */
