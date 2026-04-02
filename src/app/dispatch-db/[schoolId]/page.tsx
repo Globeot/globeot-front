@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -26,143 +27,115 @@ import {
   TableRow,
   TableCell,
 } from "../../../components/ui/table";
+import api from "../../../lib/api";
 
 interface DispatchEntry {
-  id: number;
   semester: string;
-  convertedScore: number;
+  score: number;
 }
-//커뮤니티글 구조
+
 interface CommunityPost {
-  id: number;
+  articleId: number;
   title: string;
-  author: string;
-  date: string;
-  comments: number;
-  stage: "pre" | "abroad" | "returned";
+  nickname: string;
+  createdAt: string;
+  commentCount: number;
+  exchangeStatus: string;
 }
-//학교 상세정보 구조
+
 interface SchoolInfo {
-  country: string;
+  schoolId: number;
+  imgUrl: string;
+  name: string;
   city: string;
-  photo: string;
-  website: string;
-  famousMajors: string[];
+  country: string;
+  popularMajors: string[];
   travelAccess: string;
-  travelAccessDesc: string;
-  internationalRatio: string;
-  livingCost: string;
-  livingCostLevel: "최상" | "상" | "중" | "하";
+  travelAccessLevel: "HIGH" | "MEDIUM" | "LOW";
+  monthlyCost: string;
+  monthlyCostLevel: "HIGH" | "MEDIUM" | "LOW";
+  internationalStudentRatio: number;
   buddyProgram: string;
-  exchangeWebsite: string;
-  entries: DispatchEntry[];
-  communityPosts: CommunityPost[];
+  officialSite: string;
+  isFavorite: boolean;
 }
-
-//‼️ 목업데이터
-const allData: Record<string, SchoolInfo> = {
-  UCLA: {
-    country: "미국",
-    city: "로스앤젤레스",
-    photo:
-      "https://images.unsplash.com/photo-1580982324076-d95230f6e024?w=800&h=400&fit=crop",
-    website: "https://www.ucla.edu",
-    famousMajors: ["영화학", "경영학", "컴퓨터공학", "심리학"],
-    travelAccess: "중",
-    travelAccessDesc: "미 서부 거점, 국내선 풍부",
-    internationalRatio: "12%",
-    livingCost: "$1,200–2,000/월",
-    livingCostLevel: "최상",
-    buddyProgram: "Dashew Center 프로그램",
-    exchangeWebsite: "https://www.ucla.edu/exchange",
-    entries: [
-      { id: 3, semester: "2025-1", convertedScore: 89.3 },
-      { id: 8, semester: "2024-2", convertedScore: 80.0 },
-    ],
-    communityPosts: [
-      {
-        id: 4,
-        title: "UCLA 수강신청 팁 공유합니다",
-        author: "지은",
-        date: "2026.02.17",
-        comments: 12,
-        stage: "pre",
-      },
-    ],
-  },
-
-  뮌헨대학교: {
-    country: "독일",
-    city: "뮌헨",
-    photo:
-      "https://images.unsplash.com/photo-1575650772339-75dba4caa0a6?w=800&h=400&fit=crop",
-    website: "https://www.lmu.de",
-    famousMajors: ["경영학", "법학", "의학", "물리학"],
-    travelAccess: "상",
-    travelAccessDesc: "유럽 중심부, 기차/항공 접근성 우수",
-    internationalRatio: "15%",
-    livingCost: "€800–1,200/월",
-    livingCostLevel: "중",
-    buddyProgram: "ESN 있음",
-    exchangeWebsite: "https://www.lmu.de/en/workspace-for-students/exchange/",
-    entries: [
-      { id: 1, semester: "2025-2", convertedScore: 92.5 },
-      { id: 7, semester: "2024-2", convertedScore: 81.8 },
-    ],
-    communityPosts: [
-      {
-        id: 1,
-        title: "독일 뮌헨대 기숙사 신청 방법 아시는 분?",
-        author: "민지",
-        date: "2026.02.20",
-        comments: 5,
-        stage: "pre",
-      },
-      {
-        id: 10,
-        title: "뮌헨대 수강신청 꿀팁 공유",
-        author: "서윤",
-        date: "2026.01.15",
-        comments: 8,
-        stage: "abroad",
-      },
-    ],
-  },
-};
 
 const stageLabelMap: Record<string, string> = {
-  pre: "배정 전",
-  abroad: "파견 중",
-  returned: "파견 후",
-};
-
-const getLevelStyle = (level: string) => {
-  if (level === "상") return "bg-green-100 text-green-700";
-  if (level === "중") return "bg-yellow-100 text-yellow-700";
-  if (level === "하") return "bg-gray-100 text-gray-700";
-  if (level === "최상") return "bg-red-100 text-red-700";
-  return "bg-gray-100 text-gray-700";
+  APPLYING: "배정 전",
+  PRE_DEPARTURE: "파견 전",
+  ABROAD: "파견 중",
+  RETURNED: "파견 후",
 };
 
 const stageBadgeMap: Record<string, string> = {
-  pre: "status-badge-pre",
-  abroad: "status-badge-abroad",
-  returned: "status-badge-returned",
+  APPLYING: "status-badge-pre",
+  PRE_DEPARTURE: "status-badge-pre",
+  ABROAD: "status-badge-abroad",
+  RETURNED: "status-badge-returned",
+};
+
+const levelToLabel = (level: string) => {
+  if (level === "HIGH") return "상";
+  if (level === "MEDIUM") return "중";
+  if (level === "LOW") return "하";
+  return "중";
 };
 
 const POSTS_PER_PAGE = 5;
 
 export default function SchoolDetailPage() {
-  const params = useParams<{ schoolName: string }>();
+  const params = useParams<{ schoolId: string }>();
   const router = useRouter();
+  const schoolId = params.schoolId;
 
-  const schoolName = params.schoolName;
-  const decoded = decodeURIComponent(schoolName || "");
-  //‼️ 목업데이터
-  const school = allData[decoded];
-
+  const [school, setSchool] = useState<SchoolInfo | null>(null);
+  const [entries, setEntries] = useState<DispatchEntry[]>([]);
+  const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [postPage, setPostPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!schoolId) return;
+
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [detailRes, historyRes, articleRes] = await Promise.all([
+          api.get(`/schools/${schoolId}`),
+          api.get(`/schools/${schoolId}/history`),
+          api.get(`/schools/${schoolId}/articles`),
+        ]);
+
+        setSchool(detailRes.data);
+        setEntries(historyRes.data);
+        setPosts(articleRes.data);
+        setIsBookmarked(detailRes.data.isFavorite);
+      } catch (err) {
+        console.error("상세 정보 로딩 실패:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [schoolId]);
+
+  const toggleFavorite = async () => {
+    try {
+      if (isBookmarked) {
+        await api.delete(`/schools/${schoolId}/favorite`);
+        setIsBookmarked(false);
+      } else {
+        await api.post(`/schools/${schoolId}/favorite`);
+        setIsBookmarked(true);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  if (isLoading) return <div className="py-20 text-center">로딩 중...</div>;
 
   if (!school) {
     return (
@@ -177,48 +150,39 @@ export default function SchoolDetailPage() {
     );
   }
 
-  //‼️ 점수데이터
-  const entries = school.entries;
-
   const hasScore = entries.length > 0;
-
   const avgScore = hasScore
-    ? (
-        entries.reduce((sum, e) => sum + e.convertedScore, 0) / entries.length
-      ).toFixed(1)
+    ? (entries.reduce((sum, e) => sum + e.score, 0) / entries.length).toFixed(1)
     : null;
+  const maxScore = hasScore ? Math.max(...entries.map((e) => e.score)) : null;
+  const minScore = hasScore ? Math.min(...entries.map((e) => e.score)) : null;
 
-  const maxScore = hasScore
-    ? Math.max(...entries.map((e) => e.convertedScore))
-    : null;
-
-  const minScore = hasScore
-    ? Math.min(...entries.map((e) => e.convertedScore))
-    : null;
-
-  const totalPostPages = Math.max(
-    1,
-    Math.ceil(school.communityPosts.length / POSTS_PER_PAGE),
-  );
-
-  const pagedPosts = school.communityPosts.slice(
+  const totalPostPages = Math.max(1, Math.ceil(posts.length / POSTS_PER_PAGE));
+  const pagedPosts = posts.slice(
     (postPage - 1) * POSTS_PER_PAGE,
     postPage * POSTS_PER_PAGE,
   );
 
+  const livingCostLabel =
+    school.monthlyCostLevel === "HIGH"
+      ? "최상"
+      : school.monthlyCostLevel === "MEDIUM"
+        ? "상"
+        : "중";
+  const travelAccessLabel = levelToLabel(school.travelAccessLevel);
+
   const livingCostColor =
-    school.livingCostLevel === "최상"
+    livingCostLabel === "최상"
       ? "bg-red-100 text-red-700"
-      : school.livingCostLevel === "상"
+      : livingCostLabel === "상"
         ? "bg-orange-100 text-orange-700"
-        : school.livingCostLevel === "중"
+        : livingCostLabel === "중"
           ? "bg-yellow-100 text-yellow-700"
           : "bg-green-100 text-green-700";
 
   return (
     <div className="py-10">
       <div className="container-tight">
-        {/* Back */}
         <button
           onClick={() => router.push("/dispatch-db")}
           className="flex items-center gap-1 text-sm text-muted-foreground mb-4"
@@ -227,12 +191,11 @@ export default function SchoolDetailPage() {
           파견 DB로
         </button>
 
-        {/* Photo */}
         <div className="mb-6">
           <div className="rounded-xl overflow-hidden aspect-[2/1]">
             <img
-              src={school.photo}
-              alt={decoded}
+              src={school.imgUrl}
+              alt={school.name}
               className="w-full h-full object-cover"
             />
           </div>
@@ -242,12 +205,11 @@ export default function SchoolDetailPage() {
           </p>
         </div>
 
-        {/* Title */}
         <div className="flex justify-between mb-6">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <GraduationCap className="h-6 w-6 text-primary" />
-              <h1 className="text-3xl font-bold">{decoded}</h1>
+              <h1 className="text-3xl font-bold">{school.name}</h1>
             </div>
 
             <div className="flex items-center text-sm text-muted-foreground gap-1">
@@ -259,7 +221,7 @@ export default function SchoolDetailPage() {
           <Button
             variant={isBookmarked ? "default" : "outline"}
             size="icon"
-            onClick={() => setIsBookmarked(!isBookmarked)}
+            onClick={toggleFavorite}
           >
             <Heart
               className={`h-4 w-4 ${isBookmarked ? "fill-current" : ""}`}
@@ -267,16 +229,13 @@ export default function SchoolDetailPage() {
           </Button>
         </div>
 
-        {/* Info */}
-        {/* Info Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          {/* 유명한 전공 */}
           <div className="card-elevated p-4">
             <GraduationCap className="h-4 w-4 text-primary mb-1" />
             <p className="text-xs text-muted-foreground">유명한 전공</p>
 
             <div className="flex flex-wrap gap-1 mt-1">
-              {school.famousMajors.map((m) => (
+              {school.popularMajors.map((m) => (
                 <span
                   key={m}
                   className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-full"
@@ -287,7 +246,6 @@ export default function SchoolDetailPage() {
             </div>
           </div>
 
-          {/* 여행 접근성 */}
           <div className="card-elevated p-4">
             <Plane className="h-4 w-4 text-primary mb-1" />
 
@@ -296,21 +254,20 @@ export default function SchoolDetailPage() {
 
               <span
                 className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
-                  school.travelAccess === "상"
+                  travelAccessLabel === "상"
                     ? "bg-green-100 text-green-700"
                     : "bg-yellow-100 text-yellow-700"
                 }`}
               >
-                {school.travelAccess}
+                {travelAccessLabel}
               </span>
             </div>
 
             <p className="text-xs text-muted-foreground mt-0.5">
-              {school.travelAccessDesc}
+              {school.travelAccess}
             </p>
           </div>
 
-          {/* 생활비 */}
           <div className="card-elevated p-4">
             <DollarSign className="h-4 w-4 text-primary mb-1" />
 
@@ -318,38 +275,29 @@ export default function SchoolDetailPage() {
               <p className="text-xs text-muted-foreground">예상 월 생활비</p>
 
               <span
-                className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
-                  school.livingCostLevel === "최상"
-                    ? "bg-red-100 text-red-700"
-                    : school.livingCostLevel === "상"
-                      ? "bg-orange-100 text-orange-700"
-                      : school.livingCostLevel === "중"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-green-100 text-green-700"
-                }`}
+                className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${livingCostColor}`}
               >
-                {school.livingCostLevel}
+                {livingCostLabel}
               </span>
             </div>
 
-            <p className="text-sm font-semibold">{school.livingCost}</p>
+            <p className="text-sm font-semibold">{school.monthlyCost}</p>
           </div>
 
-          {/* 국제학생 비율 */}
           <div className="card-elevated p-4">
             <Users className="h-4 w-4 text-primary mb-1" />
             <p className="text-xs text-muted-foreground">국제학생 비율</p>
-            <p className="text-sm font-semibold">{school.internationalRatio}</p>
+            <p className="text-sm font-semibold">
+              {school.internationalStudentRatio}%
+            </p>
           </div>
 
-          {/* 버디 프로그램 */}
           <div className="card-elevated p-4">
             <Heart className="h-4 w-4 text-primary mb-1" />
             <p className="text-xs text-muted-foreground">버디 프로그램</p>
             <p className="text-sm font-semibold">{school.buddyProgram}</p>
           </div>
 
-          {/* 공식 사이트 */}
           <div className="card-elevated p-4">
             <ExternalLink className="h-4 w-4 text-primary mb-1" />
             <p className="text-xs text-muted-foreground">
@@ -357,7 +305,7 @@ export default function SchoolDetailPage() {
             </p>
 
             <a
-              href={school.exchangeWebsite}
+              href={school.officialSite}
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm font-semibold text-primary hover:underline"
@@ -367,7 +315,6 @@ export default function SchoolDetailPage() {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="card-elevated p-4 text-center">
             <TrendingUp className="h-4 w-4 mx-auto mb-1 text-primary" />
@@ -388,7 +335,6 @@ export default function SchoolDetailPage() {
           </div>
         </div>
 
-        {/* History */}
         <h2 className="font-bold mb-3">📊 과거 배정 이력</h2>
 
         <div className="card-elevated mb-8">
@@ -402,11 +348,11 @@ export default function SchoolDetailPage() {
 
             <TableBody>
               {entries.length > 0 ? (
-                entries.map((e) => (
-                  <TableRow key={e.id}>
+                entries.map((e, idx) => (
+                  <TableRow key={idx}>
                     <TableCell>{e.semester}</TableCell>
                     <TableCell className="text-right font-semibold">
-                      {e.convertedScore}
+                      {e.score}
                     </TableCell>
                   </TableRow>
                 ))
@@ -424,30 +370,28 @@ export default function SchoolDetailPage() {
           </Table>
         </div>
 
-        {/* Community */}
         <h2 className="font-bold mb-3">💬 관련 커뮤니티 글</h2>
 
         <div className="space-y-2 mb-4">
-          {/*‼️서버에서 값 가져오기*/}
           {pagedPosts.length > 0 ? (
             pagedPosts.map((post) => (
               <Link
-                key={post.id}
-                href={`/community/${post.id}`}
+                key={post.articleId}
+                href={`/community/${post.articleId}`}
                 className="card-elevated p-4 flex justify-between block"
               >
                 <div>
-                  <span className={stageBadgeMap[post.stage]}>
-                    {stageLabelMap[post.stage]}
+                  <span className={stageBadgeMap[post.exchangeStatus]}>
+                    {stageLabelMap[post.exchangeStatus]}
                   </span>
 
                   <h3 className="text-sm font-semibold mt-1">{post.title}</h3>
                 </div>
 
                 <div className="text-right text-xs text-muted-foreground">
-                  <p>{post.author}</p>
-                  <p>{post.date}</p>
-                  <p>💬 {post.comments}</p>
+                  <p>{post.nickname}</p>
+                  <p>{new Date(post.createdAt).toLocaleDateString()}</p>
+                  <p>💬 {post.commentCount}</p>
                 </div>
               </Link>
             ))
@@ -463,8 +407,6 @@ export default function SchoolDetailPage() {
             </div>
           )}
         </div>
-
-        {/* Pagination */}
 
         {totalPostPages > 1 && (
           <div className="flex justify-center gap-2">

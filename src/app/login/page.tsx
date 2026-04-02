@@ -6,29 +6,33 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 
+//화면 구별
 type AuthMode = "login" | "signup";
 type SignupStep = 1 | 2 | 3;
 
+const API_BASE_URL = "https://globeot.duckdns.org/api/v1/auth";
+
 const LoginPage = () => {
+  //화면 구별
   const [mode, setMode] = useState<AuthMode>("login");
   const [signupStep, setSignupStep] = useState<SignupStep>(1);
-  const [showPassword, setShowPassword] = useState(false);
+  //사용자 입력 정보
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [nickname, setNickname] = useState("");
   const [stage, setStage] = useState("");
 
-  //로그인 state
-  const [isSendingCode, setIsSendingCode] = useState(false); //인증코드 보내는 중?
-  const [emailError, setEmailError] = useState(""); //메일양식 에러
-
-  const [otpError, setOtpError] = useState(""); //인증번호 관련
-
+  //인증번호 ,회원가입 등
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [otpError, setOtpError] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
-  const [isCheckingNickname, setIsCheckingNickname] = useState(false); //닉네임 확인중?
-  const [isNicknameChecked, setIsNicknameChecked] = useState(false); //닉네임 중복확인 (추후)
+  const [isCheckingNickname, setIsCheckingNickname] = useState(false);
+  const [isNicknameChecked, setIsNicknameChecked] = useState(false);
 
+  //입력값 초기로 돌림
   const resetForm = () => {
     setEmail("");
     setPassword("");
@@ -42,181 +46,187 @@ const LoginPage = () => {
     setOtpError("");
   };
 
-  //메일검증 메소드
   const isValidEwhaEmail = (value: string) => {
     const trimmed = value.trim().toLowerCase();
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmed)) return false;
-
     return trimmed.endsWith("@ewha.ac.kr") || trimmed.endsWith("@ewhain.net");
   };
-  //*회원가입 1단계
-  //인증번호 발송
-  const handleSendVerificationCode = async () => {
-    const trimmedEmail = email.trim().toLowerCase();
 
-    //검증
-    if (!trimmedEmail) {
-      setEmailError("학교 이메일을 입력해 주세요.");
-      alert("학교 이메일을 입력해 주세요.");
-      return;
-    }
-
-    if (!isValidEwhaEmail(trimmedEmail)) {
-      setEmailError(
-        "@ewha.ac.kr 또는 @ewhain.net 이메일만 사용할 수 있습니다.",
-      );
-      alert("@ewha.ac.kr 또는 @ewhain.net 이메일만 사용할 수 있습니다.");
+  // --- 로그인 (Login) ---
+  const handleLogin = async () => {
+    if (!email || !password) {
+      alert("이메일과 비밀번호를 입력하세요.");
       return;
     }
 
     try {
-      setEmailError("");
-      setIsSendingCode(true);
-
-      const response = await fetch("@", {
+      const res = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+      console.log("로그인 응답 데이터:", data); // 디버깅을 위해 콘솔에 찍어봅니다.
+
+      if (!res.ok) {
+        alert(data.message || "로그인 실패");
+        return;
+      }
+
+      // 서버에서 주는 키 이름이 'token'이므로 정확히 맞춰줍니다.
+      const token = data.token;
+
+      if (token) {
+        localStorage.setItem("accessToken", token); // 저장은 기존대로 'accessToken'이라는 이름으로 해도 무방합니다.
+        alert("로그인 성공!");
+        window.location.href = "/"; // 메인 페이지로 이동
+      } else {
+        // 만약 또 안된다면 데이터 구조가 다를 수 있으니 알림을 띄웁니다.
+        alert(
+          "서버 응답에 토큰(token)이 포함되어 있지 않습니다. 콘솔을 확인하세요.",
+        );
+        console.error("토큰 파싱 실패. 응답 구조:", data);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("서비 오류가 발생했습니다.");
+    }
+  };
+
+  // --- 회원가입 1단계: 인증번호 발송 ---
+  const handleSendVerificationCode = async () => {
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!isValidEwhaEmail(trimmedEmail)) {
+      alert("@ewha.ac.kr 또는 @ewhain.net 이메일만 사용 가능합니다.");
+      return;
+    }
+
+    try {
+      setIsSendingCode(true);
+      const res = await fetch(`${API_BASE_URL}/email/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: trimmedEmail }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        const message = data?.message || "인증번호 발송에 실패했습니다.";
-        setEmailError(message);
-        alert(message);
+      if (!res.ok) {
+        const msg = await res.text();
+        alert(msg || "인증번호 발송 실패");
         return;
       }
 
       alert("인증번호가 이메일로 발송되었습니다.");
       setSignupStep(2);
     } catch (error) {
-      console.error(error);
-      setEmailError("서버와 통신 중 오류가 발생했습니다.");
-      alert("서버와 통신 중 오류가 발생했습니다.");
+      alert("서버 통신 오류");
     } finally {
       setIsSendingCode(false);
     }
   };
-  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const onlyNumbers = e.target.value.replace(/\D/g, "").slice(0, 6);
-    setOtp(onlyNumbers);
-    setOtpError("");
-  };
-  //*회원가입 2단계
-  //인증번호 검증 (미완 - 백엔드)
+
+  // --- 회원가입 2단계: 인증번호 확인 ---
   const handleVerifyOtp = async () => {
-    if (!otp) {
-      setOtpError("인증번호를 입력해 주세요.");
-      alert("인증번호를 입력해 주세요.");
+    if (!otp || otp.length !== 6) {
+      alert("인증번호 6자리를 입력해주세요.");
       return;
     }
 
-    if (!/^\d{6}$/.test(otp)) {
-      setOtpError("인증번호는 숫자 6자리여야 합니다.");
-      alert("인증번호는 숫자 6자리여야 합니다.");
-      return;
-    }
-    //추후 백엔드 붙일 예정
     try {
-      setOtpError("");
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const res = await fetch(`${API_BASE_URL}/email/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
+      });
 
-      alert("이메일 인증이 완료되었습니다.");
+      if (!res.ok) {
+        alert("인증번호가 일치하지 않거나 만료되었습니다.");
+        return;
+      }
+
+      alert("이메일 인증 성공!");
       setSignupStep(3);
     } catch (error) {
-      console.error(error);
-      setOtpError("인증 확인 중 오류가 발생했습니다.");
-      alert("인증 확인 중 오류가 발생했습니다.");
+      alert("인증 확인 중 오류 발생");
     }
   };
 
-  //*회원가입 3단계
-  //중복아이디 검증 (미완)
+  // --- 회원가입 3단계: 닉네임 중복확인 ---
   const handleCheckNickname = async () => {
     if (!nickname.trim()) {
-      alert("닉네임을 입력해 주세요.");
+      alert("닉네임을 입력해주세요.");
       return;
     }
 
     try {
       setIsCheckingNickname(true);
+      const res = await fetch(
+        `${API_BASE_URL}/check-nickname?nickname=${encodeURIComponent(nickname.trim())}`,
+      );
+      const isAvailable = await res.json();
 
-      // (추후 중복확인 - 백엔드)
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      alert("사용 가능한 닉네임입니다. (임시)");
-      setIsNicknameChecked(true);
+      if (isAvailable) {
+        alert("사용 가능한 닉네임입니다.");
+        setIsNicknameChecked(true);
+      } else {
+        alert("이미 사용 중인 닉네임입니다.");
+        setIsNicknameChecked(false);
+      }
     } catch (error) {
-      console.error(error);
-      alert("닉네임 확인 중 오류가 발생했습니다.");
+      alert("중복 확인 오류");
     } finally {
       setIsCheckingNickname(false);
     }
   };
-  //회원가입
-  const handleSignup = async () => {
-    if (!nickname.trim()) {
-      alert("닉네임을 입력해 주세요.");
-      return;
-    }
 
+  // --- 회원가입 3단계: 최종 가입 신청 ---
+  const handleSignup = async () => {
     if (!isNicknameChecked) {
       alert("닉네임 중복확인을 해주세요.");
       return;
     }
-
-    if (!password) {
-      alert("비밀번호를 입력해 주세요.");
-      return;
-    }
-
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
-    if (!passwordRegex.test(password)) {
-      alert("비밀번호는 8자 이상, 영문+숫자 조합이어야 합니다.");
-      return;
-    }
-
-    if (!passwordConfirm) {
-      alert("비밀번호 확인을 입력해 주세요.");
-      return;
-    }
-
     if (password !== passwordConfirm) {
       alert("비밀번호가 일치하지 않습니다.");
       return;
     }
-
     if (!stage) {
-      alert("파견 단계를 선택해 주세요.");
+      alert("파견 단계를 선택해주세요.");
       return;
     }
 
     try {
-      //(임시 - 추후 백엔드 붙일 예정)
-      const requestBody = {
-        email,
-        nickname: nickname.trim(),
-        password,
-        exchangeStage: stage,
-      };
+      //최종 회원가입 요청
+      const res = await fetch(`${API_BASE_URL}/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          nickname: nickname.trim(),
+          password,
+          exchangeStatus: stage,
+        }),
+      });
 
-      console.log("회원가입 요청 데이터:", requestBody);
+      const result = await res.json();
 
-      //백엔드 구현 전.
+      if (!res.ok) {
+        alert(result.message || "회원가입 실패");
+        return;
+      }
 
-      alert("회원가입 완료!");
+      alert("회원가입이 완료되었습니다! 로그인해 주세요.");
       setMode("login");
       resetForm();
     } catch (error) {
-      console.error(error);
-      alert("회원가입 중 오류가 발생했습니다.");
+      alert("회원가입 처리 중 서버 오류");
     }
+  };
+
+  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const onlyNumbers = e.target.value.replace(/\D/g, "").slice(0, 6);
+    setOtp(onlyNumbers);
+    setOtpError("");
   };
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-10 px-4">
@@ -283,7 +293,10 @@ const LoginPage = () => {
                   </button>
                 </div>
               </div>
-              <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button
+                onClick={handleLogin}
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              >
                 로그인
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -407,8 +420,8 @@ const LoginPage = () => {
                 <Label className="text-sm font-medium">파견 단계</Label>
                 <div className="grid grid-cols-3 gap-2 mt-1.5">
                   {[
-                    { value: "PRE_ASSIGN", label: "배정 전" },
-                    { value: "PRE_DEPART", label: "파견 전" },
+                    { value: "APPLYING", label: "배정 전" },
+                    { value: "PRE_DEPARTURE", label: "파견 전" },
                     { value: "ABROAD", label: "파견 중" },
                     { value: "RETURNED", label: "파견 후" },
                   ].map((s) => (

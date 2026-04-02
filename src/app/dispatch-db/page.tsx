@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { Input } from "../../components/ui/input";
@@ -13,84 +13,21 @@ import {
   TableRow,
   TableCell,
 } from "../../components/ui/table";
+import api from "../../lib/api";
 
 interface DispatchEntry {
-  id: number;
+  schoolId: number;
   country: string;
   city: string;
-  school: string;
-  convertedScore: number;
-  travelAccess: string;
-  livingCost: string;
-  website: string;
+  schoolName: string;
+  avgScore: number | null;
+  travelAccessLevel: "HIGH" | "MEDIUM" | "LOW";
+  monthlyCost: string;
+  officialSite: string;
 }
 
-//‼️목업데이터
-const mockData: DispatchEntry[] = [
-  {
-    id: 1,
-    country: "독일",
-    city: "뮌헨",
-    school: "뮌헨대학교",
-    convertedScore: 92.5,
-    travelAccess: "상",
-    livingCost: "€800–1,200",
-    website: "https://www.lmu.de",
-  },
-  {
-    id: 2,
-    country: "프랑스",
-    city: "파리",
-    school: "소르본대학교",
-    convertedScore: 90.1,
-    travelAccess: "상",
-    livingCost: "€900–1,400",
-    website: "https://www.sorbonne-universite.fr",
-  },
-  {
-    id: 3,
-    country: "미국",
-    city: "로스앤젤레스",
-    school: "UCLA",
-    convertedScore: 89.3,
-    travelAccess: "중",
-    livingCost: "$1,200–2,000",
-    website: "https://www.ucla.edu",
-  },
-  {
-    id: 4,
-    country: "스페인",
-    city: "바르셀로나",
-    school: "바르셀로나대학교",
-    convertedScore: 87.1,
-    travelAccess: "상",
-    livingCost: "€700–1,100",
-    website: "https://www.ub.edu",
-  },
-  {
-    id: 5,
-    country: "일본",
-    city: "도쿄",
-    school: "도쿄대학교",
-    convertedScore: 85.4,
-    travelAccess: "중",
-    livingCost: "¥80,000–120,000",
-    website: "https://www.u-tokyo.ac.jp",
-  },
-  {
-    id: 6,
-    country: "영국",
-    city: "런던",
-    school: "UCL",
-    convertedScore: 83.2,
-    travelAccess: "상",
-    livingCost: "£1,000–1,600",
-    website: "https://www.ucl.ac.uk",
-  },
-];
-
 const scoreRanges = [
-  { label: "전체", min: 0, max: 100 },
+  { label: "전체", min: null, max: null },
   { label: "100–96", min: 96, max: 100 },
   { label: "95–90", min: 90, max: 95 },
   { label: "89–85", min: 85, max: 89 },
@@ -98,47 +35,55 @@ const scoreRanges = [
   { label: "79–75", min: 75, max: 79 },
   { label: "74–70", min: 70, max: 74 },
   { label: "69 이하", min: 0, max: 69 },
-  { label: "점수 없음", min: -1, max: -1 },
+  { label: "점수 없음", min: null, max: null },
 ];
-
-const PAGE_SIZE = 20;
 
 export default function DispatchDBPage() {
   const router = useRouter();
 
   const [schoolSearch, setSchoolSearch] = useState("");
   const [scoreRange, setScoreRange] = useState(scoreRanges[0]);
-  const [page, setPage] = useState(1);
+  const [schools, setSchools] = useState<DispatchEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  //‼️검색창+필터링 결과
-  const filtered = mockData.filter((entry) => {
-    if (
-      schoolSearch &&
-      !entry.school.includes(schoolSearch) &&
-      !entry.country.includes(schoolSearch) &&
-      !entry.city.includes(schoolSearch)
-    ) {
-      return false;
+  // 학교 목록 불러오기
+  useEffect(() => {
+    const fetchSchools = async () => {
+      try {
+        setIsLoading(true);
+
+        const params: any = {
+          keyword: schoolSearch || null,
+          noScoreOnly: scoreRange.label === "점수 없음",
+        };
+
+        if (scoreRange.min !== null) params.minScore = scoreRange.min;
+        if (scoreRange.max !== null) params.maxScore = scoreRange.max;
+
+        const res = await api.get("/schools", { params });
+        setSchools(res.data);
+      } catch (err) {
+        console.error("학교 목록 로딩 실패:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSchools();
+  }, [schoolSearch, scoreRange]);
+
+  const getTravelAccessUI = (level: string) => {
+    switch (level) {
+      case "HIGH":
+        return { label: "상", class: "bg-green-100 text-green-700" };
+      case "MEDIUM":
+        return { label: "중", class: "bg-yellow-100 text-yellow-700" };
+      case "LOW":
+        return { label: "하", class: "bg-gray-100 text-gray-700" };
+      default:
+        return { label: "-", class: "bg-muted text-muted-foreground" };
     }
-    if (scoreRange.label === "점수 없음") {
-      return (
-        entry.convertedScore === null || entry.convertedScore === undefined
-      );
-    }
-    if (
-      scoreRange.label !== "전체" &&
-      (entry.convertedScore < scoreRange.min ||
-        entry.convertedScore > scoreRange.max + 0.99)
-    ) {
-      return false;
-    }
-
-    return true;
-  });
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-
-  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  };
 
   return (
     <div className="py-6 sm:py-10">
@@ -147,24 +92,18 @@ export default function DispatchDBPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
             학교별 DB
           </h1>
-
           <p className="text-muted-foreground text-sm mb-6">
             학교별 과거 합격 점수 데이터 · 학교명 클릭 시 상세 페이지 이동
           </p>
         </div>
 
-        {/* 검색 */}
         <div className="space-y-3 mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-
             <Input
               placeholder="학교명, 국가, 도시 검색..."
               value={schoolSearch}
-              onChange={(e) => {
-                setSchoolSearch(e.target.value);
-                setPage(1);
-              }}
+              onChange={(e) => setSchoolSearch(e.target.value)}
               className="pl-9"
             />
           </div>
@@ -173,14 +112,10 @@ export default function DispatchDBPage() {
             <span className="text-xs font-medium text-muted-foreground self-center mr-1">
               점수 구간
             </span>
-
             {scoreRanges.map((range) => (
               <button
                 key={range.label}
-                onClick={() => {
-                  setScoreRange(range);
-                  setPage(1);
-                }}
+                onClick={() => setScoreRange(range)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                   scoreRange.label === range.label
                     ? "bg-primary text-primary-foreground"
@@ -209,7 +144,13 @@ export default function DispatchDBPage() {
             </TableHeader>
 
             <TableBody>
-              {paged.length === 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-12">
+                    로딩 중...
+                  </TableCell>
+                </TableRow>
+              ) : schools.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={7}
@@ -219,112 +160,72 @@ export default function DispatchDBPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                paged.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell className="text-sm text-muted-foreground">
-                      <button
-                        //‼️ 서버 검색
-                        onClick={() => {
-                          setSchoolSearch(entry.country);
-                          setPage(1);
-                        }}
-                        className="hover:text-primary hover:underline"
-                      >
-                        {entry.country}
-                      </button>
-                    </TableCell>
-
-                    <TableCell className="text-sm text-muted-foreground">
-                      <button
-                        //‼️ 서버 검색
-                        onClick={() => {
-                          setSchoolSearch(entry.city);
-                          setPage(1);
-                        }}
-                        className="hover:text-primary hover:underline"
-                      >
-                        {entry.city}
-                      </button>
-                    </TableCell>
-
-                    <TableCell>
-                      <button
-                        onClick={() =>
-                          router.push(
-                            `/dispatch-db/${encodeURIComponent(entry.school)}`,
-                          )
-                        }
-                        //‼️ 해당 학교 데이터
-                        className="text-sm font-medium text-primary hover:underline"
-                      >
-                        {entry.school}
-                      </button>
-                    </TableCell>
-
-                    <TableCell className="font-semibold">
-                      {entry.convertedScore}
-                    </TableCell>
-
-                    <TableCell>
-                      <span
-                        className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                          entry.travelAccess === "상"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {entry.travelAccess}
-                      </span>
-                    </TableCell>
-
-                    <TableCell className="text-sm text-muted-foreground">
-                      {entry.livingCost}
-                    </TableCell>
-
-                    <TableCell>
-                      <a
-                        href={entry.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    </TableCell>
-                  </TableRow>
-                ))
+                schools.map((entry) => {
+                  const accessUI = getTravelAccessUI(entry.travelAccessLevel);
+                  return (
+                    <TableRow key={entry.schoolId}>
+                      <TableCell className="text-sm text-muted-foreground">
+                        <button
+                          onClick={() => setSchoolSearch(entry.country)}
+                          className="hover:text-primary hover:underline"
+                        >
+                          {entry.country}
+                        </button>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        <button
+                          onClick={() => setSchoolSearch(entry.city)}
+                          className="hover:text-primary hover:underline"
+                        >
+                          {entry.city}
+                        </button>
+                      </TableCell>
+                      <TableCell>
+                        <button
+                          onClick={() =>
+                            router.push(`/dispatch-db/${entry.schoolId}`)
+                          }
+                          className="text-sm font-medium text-primary hover:underline text-left"
+                        >
+                          {entry.schoolName}
+                        </button>
+                      </TableCell>
+                      <TableCell className="font-semibold">
+                        {entry.avgScore ?? "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={`text-xs font-bold px-2 py-0.5 rounded-full ${accessUI.class}`}
+                        >
+                          {accessUI.label}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {entry.monthlyCost}
+                      </TableCell>
+                      <TableCell>
+                        {entry.officialSite && (
+                          <a
+                            href={
+                              entry.officialSite.startsWith("http")
+                                ? entry.officialSite
+                                : `https://${entry.officialSite}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:text-primary/80"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
         </div>
-
-        {/* 페이지네이션 */}
-
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-
-            <span className="text-sm text-muted-foreground">
-              {page} / {totalPages}
-            </span>
-
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= totalPages}
-              onClick={() => setPage(page + 1)}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
 
         <p className="text-xs text-muted-foreground text-center mt-4">
           ※ 본 데이터는 참고용이며, 최종 정보는 학내 공식 사이트를 확인해주세요.

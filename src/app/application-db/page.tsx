@@ -9,8 +9,8 @@ import { Label } from "../../components/ui/label";
 
 import { gpaToPercentile } from "./gpaData";
 import { ImageUploadButton } from "../../components/tiptap-ui/image-upload-button";
+import api from "../../lib/api";
 
-/* ── 희망학교 선택 UI ── */
 const SchoolAutocomplete = ({
   rank,
   required,
@@ -24,7 +24,6 @@ const SchoolAutocomplete = ({
   onChange: (v: string) => void;
   exclude: string[];
 }) => {
-  //학교 검색
   const [query, setQuery] = useState(value);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -34,7 +33,6 @@ const SchoolAutocomplete = ({
     ? available.filter((s) => s.toLowerCase().includes(query.toLowerCase()))
     : available;
 
-  //학교 선택
   const select = (s: string) => {
     setQuery(s);
     onChange(s);
@@ -100,7 +98,6 @@ const SchoolAutocomplete = ({
 
 type ExamType = "toefl" | "ielts";
 
-//‼️
 const allSchools = [
   "뮌헨대학교",
   "소르본대학교",
@@ -116,11 +113,9 @@ const allSchools = [
 
 const semesterOptions = ["2027-2", "2027-1"] as const;
 
-/* ── ranking page 제출 ── */
 const ApplicationDBPage = () => {
   const router = useRouter();
 
-  /* 환산계산기 state */
   const [examType, setExamType] = useState<ExamType>("toefl");
   const [gpa, setGpa] = useState("");
   const [reading, setReading] = useState("");
@@ -129,7 +124,6 @@ const ApplicationDBPage = () => {
   const [writing, setWriting] = useState("");
   const [calcResult, setCalcResult] = useState<number | null>(null);
 
-  /* 업로드 state */
   const [certFile, setCertFile] = useState<File | null>(null);
   const [scoreFile, setScoreFile] = useState<File | null>(null);
   const [applySemester, setApplySemester] = useState("");
@@ -140,6 +134,7 @@ const ApplicationDBPage = () => {
     "",
     "",
   ]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const ieltsToToefl: Record<number, number> = {
     9: 30,
@@ -163,24 +158,19 @@ const ApplicationDBPage = () => {
     let w = parseFloat(writing);
 
     if ([g, r, l, s, w].some(isNaN)) return;
-    if (g > 4.3 || g < 0) return;
 
-    // IELTS -> TOEFL 변환
     if (examType === "ielts") {
       r = ieltsToToefl[r];
       l = ieltsToToefl[l];
       s = ieltsToToefl[s];
       w = ieltsToToefl[w];
-
       if ([r, l, s, w].some((v) => v === undefined)) return;
     }
 
-    //백분위
     const gpaKey = g.toFixed(2);
     const percentile = gpaToPercentile[gpaKey] || 0;
     const gpaScore = percentile / 2;
 
-    // 영어 영역별 가중치
     const readingScore = (r / 30) * 10;
     const listeningScore = (l / 30) * 10;
     const speakingScore = (s / 30) * 15;
@@ -194,18 +184,61 @@ const ApplicationDBPage = () => {
   const calcValid = [gpa, reading, listening, speaking, writing].every(
     (v) => v !== "",
   );
-
   const canSubmitTranscript =
     certFile &&
     scoreFile &&
     applySemester &&
     schoolChoices[0] &&
-    calcResult !== null;
+    calcResult !== null &&
+    !isSubmitting;
 
-
-  const handleTranscriptSubmit = () => {
+  /* ─── 지원서 제출 로직 (수정본) ─── */
+  const handleTranscriptSubmit = async () => {
     if (!canSubmitTranscript) return;
-    router.push("/application-db/ranking");
+
+    try {
+      setIsSubmitting(true);
+
+      // 1. 여기서 변수를 먼저 선언해야 합니다! (이 줄이 빠져서 에러가 났을 거예요)
+      const formData = new FormData();
+
+      // 2. JSON 데이터 구성
+      const submitData = {
+        testType: examType.toUpperCase(),
+        semester: applySemester,
+        schools: schoolChoices
+          .map((name, index) => ({
+            priority: index + 1,
+            schoolName: name,
+          }))
+          .filter((s) => s.schoolName !== ""),
+      };
+
+      // 3. 데이터와 파일들을 formData에 담기
+      formData.append(
+        "data",
+        new Blob([JSON.stringify(submitData)], { type: "application/json" }),
+      );
+      formData.append("gpaImage", certFile);
+      formData.append("englishScoreImage", scoreFile);
+
+      // 4. 서버로 전송
+      const res = await api.post("/application", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (res.status === 200 || res.status === 201) {
+        alert("지원서 제출 완료!");
+        router.push("/application-db/pending");
+      }
+    } catch (err: any) {
+      console.error("상세 에러:", err);
+      alert(err.response?.data?.message || "제출 실패");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const updateSchoolChoice = (index: number, value: string) => {
@@ -214,22 +247,18 @@ const ApplicationDBPage = () => {
     setSchoolChoices(next);
   };
 
-  /* ─── Application form ─── */
   return (
     <div className="py-6 sm:py-10">
       <div className="container-tight max-w-2xl">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-              지원 랭킹
-            </h1>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
+            지원 랭킹
+          </h1>
           <p className="text-muted-foreground text-sm mb-8">
             지원 인증을 완료하면 환산 점수 기반 랭킹을 확인할 수 있어요
           </p>
         </div>
 
-        {/* 점수계산기 */}
         <section className="mb-8">
           <h2 className="text-base font-bold text-foreground mb-4">
             1. 환산 점수 계산
@@ -241,12 +270,12 @@ const ApplicationDBPage = () => {
                 onClick={() => {
                   setExamType(type);
                   setCalcResult(null);
+                  setReading("");
+                  setListening("");
+                  setSpeaking("");
+                  setWriting("");
                 }}
-                className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                  examType === type
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
+                className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${examType === type ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
               >
                 {type.toUpperCase()}
               </button>
@@ -266,10 +295,7 @@ const ApplicationDBPage = () => {
                   value={gpa}
                   onChange={(e) => {
                     const val = Number(e.target.value);
-
                     if (val > 4.3) return;
-                    if (val < 0) return;
-
                     setGpa(e.target.value);
                   }}
                   className="w-1/2"
@@ -321,7 +347,7 @@ const ApplicationDBPage = () => {
                     <select
                       value={f.value}
                       onChange={(e) => f.setter(e.target.value)}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1.5"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1.5 outline-none focus:ring-2 focus:ring-primary"
                     >
                       <option value="">선택</option>
                       {Array.from({ length: 19 }, (_, i) => i * 0.5).map(
@@ -342,8 +368,8 @@ const ApplicationDBPage = () => {
                       value={f.value}
                       onChange={(e) => {
                         const val = Number(e.target.value);
+                        // ‼️ 범위 밖 입력 방지 (토플 30점 초과 금지)
                         if (val > f.max) return;
-                        if (val < 0) return;
                         f.setter(e.target.value);
                       }}
                       className="mt-1.5"
@@ -374,38 +400,26 @@ const ApplicationDBPage = () => {
           )}
         </section>
 
-        {/* 인증 */}
         <section className="mb-8">
           <h2 className="text-base font-bold text-foreground mb-4">
             2. 지원 인증
           </h2>
-
           <div className="card-elevated p-5 space-y-4">
-            {/* 유레카 지원 확정 캡쳐본 */}
             <div>
               <Label className="text-sm font-medium mb-1.5 block">
-                <ImageIcon className="inline h-4 w-4 mr-1" />
-                유레카 지원 확정 캡쳐본,GPA (이미지)
+                <ImageIcon className="inline h-4 w-4 mr-1" /> 유레카 지원 확정
+                캡쳐본, GPA (이미지)
               </Label>
-
               <ImageUploadButton
                 onUpload={(files) => setCertFile(files[0])}
-                allowPdf={false} // 유레카는 이미지만
+                allowPdf={false}
               />
-              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                ※ GPA 성적표 업로드 시, ‘네이버 시계 + 노트북 시계 + 유레카 교환
-                신청 화면 + 성적표 점수’ 네 창이 함께 보이도록 배치하여
-                캡쳐해주세요.
-              </p>
             </div>
-
-            {/* 어학성적표 */}
             <div>
               <Label className="text-sm font-medium mb-1.5 block">
-                <Upload className="inline h-4 w-4 mr-1" />
-                어학성적표 (PDF 또는 이미지)
+                <Upload className="inline h-4 w-4 mr-1" /> 어학성적표 (PDF 또는
+                이미지)
               </Label>
-
               <ImageUploadButton
                 onUpload={(files) => setScoreFile(files[0])}
                 allowPdf={true}
@@ -414,7 +428,6 @@ const ApplicationDBPage = () => {
           </div>
         </section>
 
-        {/* 학기 & 희망 학교 */}
         <section className="mb-8">
           <h2 className="text-base font-bold text-foreground mb-4">
             3. 지원 학기 & 희망 학교
@@ -429,11 +442,7 @@ const ApplicationDBPage = () => {
                   <button
                     key={s}
                     onClick={() => setApplySemester(s)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                      applySemester === s
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    }`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${applySemester === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
                   >
                     {s}
                   </button>
@@ -442,8 +451,7 @@ const ApplicationDBPage = () => {
             </div>
             <div>
               <Label className="text-sm font-medium mb-2 block">
-                <Trophy className="inline h-4 w-4 mr-1" />
-                희망 학교 (1~5순위)
+                <Trophy className="inline h-4 w-4 mr-1" /> 희망 학교 (1~5순위)
               </Label>
               <div className="space-y-2">
                 {[0, 1, 2, 3, 4].map((i) => (
@@ -470,11 +478,8 @@ const ApplicationDBPage = () => {
           onClick={handleTranscriptSubmit}
         >
           <Upload className="h-4 w-4 mr-2" />
-          제출하기
+          {isSubmitting ? "제출 중..." : "제출하기"}
         </Button>
-        <p className="text-xs text-muted-foreground text-center mt-3">
-          ※ 제출 후 랭킹 테이블을 확인할 수 있습니다.
-        </p>
       </div>
     </div>
   );

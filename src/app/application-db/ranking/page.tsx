@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-
 import {
   Search,
   Medal,
@@ -15,136 +13,81 @@ import {
 } from "lucide-react";
 import { Input } from "../../../components/ui/input";
 import { Button } from "../../../components/ui/button";
+import api from "../../../lib/api";
 
-//랭킹 데이터
-interface RankEntry {
-  id: number;
-  semester: string;
-  score: number;
-  gpa: number;
-  exam: string;
-  schools: string[];
-  isMe?: boolean;
+interface SchoolInfo {
+  schoolName: string;
+  schoolId: number;
+  priority: number;
 }
 
-//‼️목업데이터
-const mockRanking: RankEntry[] = [
-  {
-    id: 1,
-    semester: "2027-2",
-    score: 92.5,
-    gpa: 95,
-    exam: "TOEFL",
-    schools: ["뮌헨대학교", "베를린자유대학교", "하이델베르크대학교"],
-  },
-  {
-    id: 2,
-    semester: "2027-2",
-    score: 89.3,
-    gpa: 90,
-    exam: "TOEFL",
-    schools: ["UCLA", "UCL"],
-  },
-  {
-    id: 999,
-    semester: "2027-2",
-    score: 88.2,
-    gpa: 89,
-    exam: "TOEFL",
-    schools: ["소르본대학교", "뮌헨대학교", "바르셀로나대학교"],
-    isMe: true,
-  },
-  {
-    id: 3,
-    semester: "2027-2",
-    score: 87.1,
-    gpa: 88,
-    exam: "IELTS",
-    schools: ["소르본대학교", "바르셀로나대학교", "뮌헨대학교"],
-  },
-  {
-    id: 4,
-    semester: "2027-1",
-    score: 85.4,
-    gpa: 85,
-    exam: "TOEFL",
-    schools: ["도쿄대학교"],
-  },
-  {
-    id: 5,
-    semester: "2027-1",
-    score: 83.2,
-    gpa: 82,
-    exam: "IELTS",
-    schools: ["UCL", "옥스퍼드대학교", "케임브리지대학교"],
-  },
-  {
-    id: 6,
-    semester: "2027-1",
-    score: 80.8,
-    gpa: 80,
-    exam: "TOEFL",
-    schools: ["바르셀로나대학교", "소르본대학교"],
-  },
-  {
-    id: 7,
-    semester: "2027-2",
-    score: 78.5,
-    gpa: 76,
-    exam: "IELTS",
-    schools: ["뮌헨대학교"],
-  },
-  {
-    id: 8,
-    semester: "2027-2",
-    score: 75.1,
-    gpa: 73,
-    exam: "TOEFL",
-    schools: ["UCLA", "도쿄대학교", "UCL"],
-  },
-];
+interface RankingListDto {
+  rank: number;
+  score: number;
+  gpa: number;
+  testType: string;
+  semester: string;
+  schools: SchoolInfo[];
+  isMine: boolean;
+}
+
+interface MyRankDto {
+  myRank: number;
+  totalApplicants: number;
+  myScore: number;
+  mySchoolRankings: {
+    schoolId: number;
+    schoolName: string;
+    priority: number;
+  }[];
+}
 
 const semesterOptions = ["2027-2", "2027-1"] as const;
 type SemesterFilter = "all" | "2027-2" | "2027-1";
 
 export default function RankingPage() {
   const router = useRouter();
+
   const [semesterFilter, setSemesterFilter] = useState<SemesterFilter>("all");
   const [schoolSearch, setSchoolSearch] = useState("");
-  const [expandedId, setExpandedId] = useState<number | null>(null); //순위 펼쳐진 카드?
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  const [rankings, setRankings] = useState<RankingListDto[]>([]);
+  const [myInfo, setMyInfo] = useState<MyRankDto | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(schoolSearch);
-    }, 500);
+    const fetchRankings = async () => {
+      try {
+        setIsLoading(true);
 
+        const params: any = {};
+        if (semesterFilter !== "all") params.semester = semesterFilter;
+        if (schoolSearch) params.schoolName = schoolSearch;
+
+        const [myRes, rankRes] = await Promise.all([
+          api.get("/application"),
+          api.get("/application/rankings", { params }),
+        ]);
+
+        setMyInfo(myRes.data);
+        setRankings(rankRes.data);
+      } catch (err) {
+        console.error("랭킹 데이터 로딩 실패:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const timer = setTimeout(fetchRankings, 500);
     return () => clearTimeout(timer);
-  }, [schoolSearch]);
+  }, [semesterFilter, schoolSearch]);
 
-  //‼️ 목업데이터
-  const filtered = [...mockRanking]
-    .filter((e) => {
-      if (semesterFilter !== "all" && e.semester !== semesterFilter)
-        return false;
-      if (
-        debouncedSearch &&
-        !e.schools.some((s) => s.includes(debouncedSearch))
-      )
-        return false;
-      return true;
-    })
-    .sort((a, b) => b.score - a.score) //점수순 정렬
-    .map((e, i) => ({ ...e, rank: i + 1 })); //순위추가
-
-  //‼️ userID로 본인정보
-  const me = filtered.find((e) => e.isMe);
-  const totalCount = filtered.length;
+  const totalCount = rankings.length;
 
   return (
     <div className="py-6 sm:py-10">
       <div className="container-tight">
-        {/*뒤로가기 버튼*/}
         <div className="mb-1 flex items-center gap-3">
           <Button
             variant="ghost"
@@ -162,8 +105,7 @@ export default function RankingPage() {
           환산 점수 기준 전체 랭킹 · 참고용 데이터입니다
         </p>
 
-        {/*‼️내 정보, 학교 리스트*/}
-        {me && (
+        {myInfo && (
           <div className="card-elevated p-5 mb-6 border-l-4 border-l-primary bg-primary/[0.03]">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
@@ -175,9 +117,9 @@ export default function RankingPage() {
                     나의 순위
                   </p>
                   <p className="text-2xl font-extrabold text-foreground">
-                    {me.rank}위
+                    {myInfo.myRank}위
                     <span className="text-sm font-medium text-muted-foreground ml-1.5">
-                      / {totalCount}명
+                      / {myInfo.totalApplicants}명
                     </span>
                   </p>
                 </div>
@@ -186,23 +128,25 @@ export default function RankingPage() {
               <div className="text-right shrink-0">
                 <p className="text-xs text-muted-foreground">환산 점수</p>
                 <p className="text-2xl font-extrabold text-primary">
-                  {me.score}
+                  {myInfo.myScore}
                 </p>
                 <p className="text-[10px] text-muted-foreground">/ 100점</p>
               </div>
             </div>
 
-            {me.schools.length > 0 && (
+            {myInfo.mySchoolRankings.length > 0 && (
               <div className="mt-3 pt-3 border-t border-border/50 flex flex-wrap gap-1.5">
-                {me.schools.map((s, i) => (
-                  <span
-                    key={s}
-                    className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium"
-                  >
-                    <GraduationCap className="h-3 w-3" />
-                    {i + 1}순위 {s}
-                  </span>
-                ))}
+                {myInfo.mySchoolRankings
+                  .sort((a, b) => a.priority - b.priority)
+                  .map((s) => (
+                    <span
+                      key={s.schoolId}
+                      className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium"
+                    >
+                      <GraduationCap className="h-3 w-3" />
+                      {s.priority}순위 {s.schoolName}
+                    </span>
+                  ))}
               </div>
             )}
           </div>
@@ -221,12 +165,12 @@ export default function RankingPage() {
           </div>
         </div>
 
+        {/* 필터 섹션 */}
         <div className="space-y-3 mb-5">
           <div className="flex flex-wrap gap-2">
             <span className="text-xs font-medium text-muted-foreground self-center mr-1">
               학기
             </span>
-
             {(["all", ...semesterOptions] as const).map((s) => (
               <button
                 key={s}
@@ -245,7 +189,6 @@ export default function RankingPage() {
 
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            {/* 검색창 */}
             <Input
               placeholder="학교명으로 검색..."
               value={schoolSearch}
@@ -254,26 +197,29 @@ export default function RankingPage() {
             />
           </div>
         </div>
-        {/* 랭킹 리스트 */}
+
         <div className="space-y-2">
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <div className="py-20 text-center text-muted-foreground">
+              로딩 중...
+            </div>
+          ) : rankings.length === 0 ? (
             <div className="py-16 text-center text-muted-foreground text-sm">
               조건에 맞는 데이터가 없습니다
             </div>
           ) : (
-            filtered.map((entry) => {
-              const isMe = entry.isMe;
-              const isExpanded = expandedId === entry.id;
+            rankings.map((entry, index) => {
+              const isExpanded = expandedId === index;
 
               return (
                 <div
-                  key={entry.id}
+                  key={index}
                   className={`card-elevated p-4 transition-colors cursor-pointer ${
-                    isMe
+                    entry.isMine
                       ? "border-primary/40 bg-primary/[0.04] ring-1 ring-primary/20"
                       : ""
                   }`}
-                  onClick={() => setExpandedId(isExpanded ? null : entry.id)}
+                  onClick={() => setExpandedId(isExpanded ? null : index)}
                 >
                   <div className="flex items-center gap-3">
                     <div className="shrink-0 w-9 text-center">
@@ -304,7 +250,7 @@ export default function RankingPage() {
                         <span className="text-xs text-muted-foreground">
                           점
                         </span>
-                        {isMe && (
+                        {entry.isMine && (
                           <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
                             나
                           </span>
@@ -316,7 +262,7 @@ export default function RankingPage() {
                           GPA {entry.gpa}%
                         </span>
                         <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground">
-                          {entry.exam}
+                          {entry.testType}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {entry.semester}
@@ -330,7 +276,8 @@ export default function RankingPage() {
                           1순위
                         </p>
                         <p className="text-sm font-medium text-foreground">
-                          {entry.schools[0] ?? "—"}
+                          {entry.schools.find((s) => s.priority === 1)
+                            ?.schoolName ?? "—"}
                         </p>
                       </div>
 
@@ -349,17 +296,19 @@ export default function RankingPage() {
                         희망 학교
                       </p>
                       <div className="flex flex-wrap gap-1.5">
-                        {entry.schools.map((s, i) => (
-                          <span
-                            key={s}
-                            className="inline-flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-full text-foreground"
-                          >
-                            <span className="text-[10px] font-bold text-muted-foreground">
-                              {i + 1}
+                        {entry.schools
+                          .sort((a, b) => a.priority - b.priority)
+                          .map((s, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-full text-foreground"
+                            >
+                              <span className="text-[10px] font-bold text-muted-foreground">
+                                {s.priority}
+                              </span>
+                              {s.schoolName}
                             </span>
-                            {s}
-                          </span>
-                        ))}
+                          ))}
                       </div>
                     </div>
                   )}
