@@ -43,8 +43,14 @@ const stageAnim = {
   }),
 };
 
+
+
 export default function HomePage() {
+  console.log(process.env.NEXT_PUBLIC_API_BASE_URL);
+
   return (
+
+    
     <div className="flex flex-col min-h-screen">
       <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/30 py-16 sm:py-24">
         <div className="container px-4 md:px-6 text-center mx-auto max-w-5xl">
