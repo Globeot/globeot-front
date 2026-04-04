@@ -115,7 +115,7 @@ export default function MyPage() {
         setStage((data.stage as StageValue) ?? "ABROAD");
       } catch (error) {
         console.error("프로필 조회 실패:", error);
-        setProfileError("프로필을 불러오지 못했어. 로그인 상태를 확인해.");
+        setProfileError("프로필을 불러오지 못했습니다. 로그인 상태를 확인하세요.");
       } finally {
         setLoadingProfile(false);
       }
@@ -147,7 +147,7 @@ export default function MyPage() {
         }
       } catch (error) {
         console.error("탭 데이터 조회 실패:", error);
-        setTabError("데이터를 불러오지 못했어.");
+        setTabError("데이터 불러오기에 실패했습니다.");
       } finally {
         setLoadingTab(false);
       }
@@ -166,33 +166,33 @@ export default function MyPage() {
         stage,
       });
       setIsEditing(false);
-      alert("프로필이 저장됐어.");
+      alert("프로필이 저장됐습니다.");
     } catch (error) {
       console.error("프로필 수정 실패:", error);
-      alert("프로필 저장에 실패했어.");
+      alert("프로필 저장에 실패했습니다.");
     } finally {
       setSaveLoading(false);
     }
   };
 
   const handleDeleteMe = async () => {
-    const ok = window.confirm("정말 회원 탈퇴할 거야?");
+    const ok = window.confirm("정말 회원 탈퇴하시겠습니까?");
     if (!ok) return;
 
     try {
       await deleteMe();
       localStorage.removeItem("accessToken");
-      alert("회원 탈퇴가 완료됐어.");
+      alert("회원 탈퇴가 완료됐습니다.");
       router.push("/");
     } catch (error) {
       console.error("회원 탈퇴 실패:", error);
-      alert("회원 탈퇴에 실패했어.");
+      alert("회원 탈퇴에 실패했습니다.");
     }
   };
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
-    alert("로그아웃됐어.");
+    alert("로그아웃 되었습니다.");
     router.push("/");
   };
 
@@ -306,7 +306,7 @@ export default function MyPage() {
                 <div className="space-y-2">
                   {posts.length === 0 ? (
                     <div className="py-12 text-center text-sm text-muted-foreground">
-                      작성한 글이 없어.
+                      작성한 글이 없습니다.
                     </div>
                   ) : (
                     posts.map((post) => (
@@ -346,7 +346,7 @@ export default function MyPage() {
                 <div className="space-y-2">
                   {comments.length === 0 ? (
                     <div className="py-12 text-center text-sm text-muted-foreground">
-                      작성한 댓글이 없어.
+                      작성한 댓글이 없습니다.
                     </div>
                   ) : (
                     comments.map((comment, idx) => (
@@ -369,7 +369,7 @@ export default function MyPage() {
                 <div className="space-y-2">
                   {scraps.length === 0 ? (
                     <div className="py-12 text-center text-sm text-muted-foreground">
-                      스크랩한 게시글이 없어.
+                      스크랩한 게시글이 없습니다.
                     </div>
                   ) : (
                     scraps.map((post) => (
@@ -400,7 +400,7 @@ export default function MyPage() {
                 <div>
                   {favorites.length === 0 ? (
                     <div className="py-12 text-center text-sm text-muted-foreground">
-                      관심 등록한 학교가 없어.
+                      관심 등록한 학교가 없습니다.
                     </div>
                   ) : (
                     <div className="card-elevated overflow-hidden">
