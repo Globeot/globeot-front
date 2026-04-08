@@ -75,8 +75,12 @@ const LoginPage = () => {
         return;
       }
 
-      // 서버에서 주는 키 이름이 'token'이므로 정확히 맞춰줍니다.
-      const token = data.token;
+      // 수정
+      const token =
+        data?.token ||
+        data?.accessToken ||
+        data?.result?.token ||
+        data?.result?.accessToken;
 
       if (token) {
         localStorage.setItem("accessToken", token); // 저장은 기존대로 'accessToken'이라는 이름으로 해도 무방합니다.

@@ -56,6 +56,7 @@ type UiPost = {
   views: number;
   comments: number;
   isScraped?: boolean;
+  isAuthor?: boolean;
 };
 
 type UiComment = {
@@ -208,20 +209,24 @@ const CommunityDetailPage = () => {
         ]);
 
         const article = detailData.result;
-        setPost({
-        id: article.id,
-        title: article.title,
-        content: article.content,
-        stage: mapStage(article.exchangeStatus),
-        region: mapRegion(article.region),
-        type: mapType(article.type),
-        topic: mapTopic(article.topic),
-        author: article.authorNickname ?? "익명",
-        date: formatDate(article.createdAt),
-        views: article.viewCount ?? 0,
-        comments: article.commentCount ?? 0,
-      });
 
+        const mappedPost: UiPost = {
+          id: article.id,
+          title: article.title,
+          content: article.content,
+          stage: mapStage(article.exchangeStatus),
+          region: mapRegion(article.region),
+          type: mapType(article.type),
+          topic: mapTopic(article.topic),
+          author: article.authorNickname ?? "익명",
+          date: formatDate(article.createdAt),
+          views: article.viewCount ?? 0,
+          comments: article.commentCount ?? 0,
+          isScraped: article.isScrapped ?? article.scrapped ?? false,
+          isAuthor: article.isAuthor ?? article.author ?? false,
+        };
+
+        setPost(mappedPost);
         setIsBookmarked(!!(article.isScrapped ?? article.scrapped));
         setComments((commentData.result ?? []).map(toUiComment));
       } catch (err) {
@@ -244,9 +249,9 @@ const CommunityDetailPage = () => {
       setCommentSubmitting(true);
 
       await createArticleComment(String(id), {
-      content: commentText,
-      parentId: replyTo ?? undefined,
-    });
+        content: commentText.trim(),
+        parentId: replyTo ?? undefined,
+      });
 
       const commentData = await getArticleComments(String(id));
       const nextComments = (commentData.result ?? []).map(toUiComment);
@@ -273,9 +278,11 @@ const CommunityDetailPage = () => {
       if (isBookmarked) {
         await unscrapArticle(String(id));
         setIsBookmarked(false);
+        setPost((prev) => (prev ? { ...prev, isScraped: false } : prev));
       } else {
         await scrapArticle(String(id));
         setIsBookmarked(true);
+        setPost((prev) => (prev ? { ...prev, isScraped: true } : prev));
       }
     } catch (err) {
       console.error("스크랩 처리 실패:", err);
@@ -403,20 +410,24 @@ const CommunityDetailPage = () => {
 
             <div className="flex-1" />
 
-            <Button variant="ghost" size="sm" className="text-muted-foreground rounded-full">
-              <Edit2 className="h-4 w-4 mr-1.5" />
-              수정
-            </Button>
+            {post.isAuthor && (
+              <>
+                <Button variant="ghost" size="sm" className="text-muted-foreground rounded-full">
+                  <Edit2 className="h-4 w-4 mr-1.5" />
+                  수정
+                </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive rounded-full hover:bg-destructive/10"
-              onClick={handleDeleteArticle}
-            >
-              <Trash2 className="h-4 w-4 mr-1.5" />
-              삭제
-            </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive rounded-full hover:bg-destructive/10"
+                  onClick={handleDeleteArticle}
+                >
+                  <Trash2 className="h-4 w-4 mr-1.5" />
+                  삭제
+                </Button>
+              </>
+            )}
           </div>
         </article>
 
