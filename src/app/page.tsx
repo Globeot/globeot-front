@@ -103,7 +103,7 @@ export default function HomePage() {
               핵심 기능
             </h2>
             <p className="text-muted-foreground">
-              교환학생 준비의 모든 단계를 지원합니다
+              교환학생 준비의 모든 단계를 지원합니다.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">

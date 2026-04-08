@@ -1,5 +1,5 @@
 "use client";
-
+// CommunityWritePage 
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -15,7 +15,7 @@ import {
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Card, CardContent } from "../../../components/ui/card";
-
+import { createArticle, searchSchools, uploadImage } from "../../../lib/article";
 import { DayPicker, type DateRange } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 
@@ -61,51 +61,86 @@ const MenuBar = ({ editor }: { editor: any }) => {
 };
 
 /* ───────────── SchoolAutocomplete ───────────── */
-const SchoolAutocomplete = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => {
+const SchoolAutocomplete = ({
+  value,
+  onChange,
+}: {
+  value: { id?: number | string; name: string } | null;
+  onChange: (v: { id?: number | string; name: string } | null) => void;
+}) => {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
-  const [schools, setSchools] = useState(defaultSchools);
+  const [schools, setSchools] = useState<{ id?: number | string; name: string }[]>([]);
   const ref = useRef<HTMLDivElement>(null);
-  const filtered = query ? schools.filter((s) => s.toLowerCase().includes(query.toLowerCase())) : schools;
-  const canAdd = query.trim() !== "" && !schools.some((s) => s === query.trim());
 
   useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const h = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
+  useEffect(() => {
+    const fetchSchools = async () => {
+      if (!query.trim()) {
+        setSchools([]);
+        return;
+      }
+
+      try {
+        const data = await searchSchools(query);
+        setSchools(data.result ?? []);
+      } catch (err) {
+        console.error("학교 검색 실패:", err);
+      }
+    };
+
+    const timer = setTimeout(fetchSchools, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
   return (
     <div ref={ref} className="relative">
-      <div className="relative flex items-center min-h-[40px] w-full border rounded-md bg-background px-2 py-1 gap-1.5 focus-within:ring-1 focus-within:ring-primary">
-        {!value && <Search className="h-4 w-4 text-muted-foreground ml-1 flex-shrink-0" />}
+      <div className="flex items-center min-h-[40px] w-full border rounded-md px-2 py-1 gap-1.5">
+        {!value && <Search className="h-4 w-4 text-muted-foreground" />}
+
         {value && (
-          <div className="inline-flex items-center gap-1 bg-muted text-foreground text-xs font-medium px-2 py-1 rounded-md border flex-shrink-0">
-            <span>{value}</span>
-            <button type="button" onClick={() => { onChange(""); setQuery(""); }} className="p-0.5 hover:bg-muted-foreground/20 rounded-full">
-              <X className="h-3 w-3 text-muted-foreground" />
+          <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded">
+            <span>{value.name}</span>
+            <button
+              onClick={() => onChange(null)}
+              className="text-xs"
+            >
+              ✕
             </button>
           </div>
         )}
+
         <input
-          placeholder={value ? "" : "학교명 검색..."}
           value={query}
-          onChange={(e) => { if (!value) setQuery(e.target.value); setOpen(true); }}
+          onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setOpen(true)}
-          className="flex-1 bg-transparent border-0 outline-none focus:ring-0 p-0 text-sm min-w-[60px]"
-          disabled={!!value}
+          placeholder="학교 검색..."
+          className="flex-1 outline-none"
         />
       </div>
-      {!value && open && (query.trim() !== "" || filtered.length > 0) && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border rounded-lg shadow-md max-h-56 overflow-y-auto">
-          {filtered.map((s) => (
-            <button key={s} type="button" onClick={() => { onChange(s); setOpen(false); setQuery(""); }} className="w-full text-left px-3 py-2 text-sm hover:bg-muted">{s}</button>
+
+      {open && schools.length > 0 && (
+        <div className="absolute bg-white border w-full mt-1 z-50">
+          {schools.map((s) => (
+            <div
+              key={String(s.id)}
+              onClick={() => {
+                onChange(s);
+                setOpen(false);
+                setQuery("");
+              }}
+              className="p-2 hover:bg-gray-100 cursor-pointer"
+            >
+              {s.name}
+            </div>
           ))}
-          {canAdd && (
-            <button type="button" onClick={() => { const n = query.trim(); setSchools(p => [...p, n]); onChange(n); setOpen(false); setQuery(""); }} className="w-full text-left px-3 py-2.5 text-sm text-primary font-medium hover:bg-muted border-t flex items-center gap-1.5">
-              <Plus className="h-4 w-4" /><span>"{query}" 추가하기</span>
-            </button>
-          )}
         </div>
       )}
     </div>
@@ -169,14 +204,12 @@ const CommunityWritePage = () => {
   const [region, setRegion] = useState("");
   const [type, setType] = useState("");
   const [topic, setTopic] = useState("");
-  const [school, setSchool] = useState("");
-  const [isTradeDone, setIsTradeDone] = useState(false);
+const [school, setSchool] = useState<{ id?: number | string; name: string } | null>(null);  const [isTradeDone, setIsTradeDone] = useState(false);
   // 기본값은 "아무 날짜도 선택되지 않음" 상태로 둔다.
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [contentLength, setContentLength] = useState(0);
 
   const handleFile = (files: FileList | null) => {
@@ -206,7 +239,45 @@ const CommunityWritePage = () => {
       setContentLength(pureText.length);
     }
   });
+function mapRegionToApi(value: string) {
+  const map: Record<string, string> = {
+    유럽: "EUROPE",
+    북미: "AMERICA",
+    아시아: "ASIA",
+    오세아니아: "OCEANIA",
+    기타: "ETC",
+  };
+  return map[value] ?? "ETC";
+}
 
+function mapTypeToApi(value: string) {
+  const map: Record<string, string> = {
+    question: "QUESTION",
+    info: "INFO",
+    trade: "TRADE",
+    companion: "COMPANION",
+  };
+  return map[value];
+}
+
+function mapStageToApi(value: string) {
+  const map: Record<string, string> = {
+    pre_assign: "APPLYING",
+    pre_depart: "PRE_DEPARTURE",
+    abroad: "ABROAD",
+    returned: "RETURNED",
+  };
+  return map[value];
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+  });
+}
   const isQuestionOrInfo = type === "question" || type === "info";
   
   const isBaseInfoValid = !!(stage && region && type);
@@ -218,11 +289,43 @@ const CommunityWritePage = () => {
 
   const canSubmit = isBaseInfoValid && isTopicValid && isDateValid && isTitleValid && isContentValid;
 
-  const handleSubmit = () => {
-    if (!canSubmit) return;
-    console.log("Submit:", { title, stage, region, type, topic, school, isTradeDone, dateRange, content: editor?.getHTML() });
+  const handleSubmit = async () => {
+  if (!canSubmit) return;
+
+  try {
+    const htmlContent = editor?.getHTML() ?? "";
+
+    const uploadedUrls: string[] = [];
+
+    for (const file of images) {
+      const base64 = await fileToBase64(file);
+      const uploadRes = await uploadImage(base64);
+
+      const urlValues = Object.values(uploadRes.result ?? {}).filter(
+        (v): v is string => typeof v === "string" && !!v
+      );
+
+      uploadedUrls.push(...urlValues);
+    }
+
+    await createArticle({
+      title: title.trim(),
+      content: htmlContent,
+      region: mapRegionToApi(region),
+      type: mapTypeToApi(type),
+      exchangeStatus: mapStageToApi(stage),
+      topic: topic || undefined,
+      schoolId: (school?.id) ?? undefined,
+      imageUrls: uploadedUrls,
+    });
+
+    alert("게시글이 등록됐습니다.");
     router.push("/community");
-  };
+  } catch (error) {
+    console.error("게시글 작성 실패:", error);
+    alert("게시글 작성에 실패했습니다.");
+  }
+};
 
   return (
     <div className="py-6 sm:py-10 bg-background min-h-screen">

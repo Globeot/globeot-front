@@ -1,45 +1,70 @@
-'use client';
+"use client";
 // CommunityDetailPage.tsx
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Bookmark, Flag, Trash2, Edit2, Send, CornerDownRight, FileText, Home, Wallet, Wifi, ShieldCheck, GraduationCap, Compass, MoreHorizontal } from "lucide-react";
+import {
+  ArrowLeft,
+  Bookmark,
+  Flag,
+  Trash2,
+  Edit2,
+  Send,
+  CornerDownRight,
+  FileText,
+  Home,
+  Wallet,
+  Wifi,
+  ShieldCheck,
+  GraduationCap,
+  Compass,
+  MoreHorizontal,
+} from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Separator } from "../../../components/ui/separator";
+import {
+  createArticleComment,
+  deleteArticle,
+  getArticleComments,
+  getArticleDetail,
+  scrapArticle,
+  unscrapArticle,
+  type CommentItem,
+} from "../../../lib/article";
 
 type StageFilter = "pre_assign" | "pre_depart" | "abroad" | "returned";
-type TopicFilter = "행정·비자" | "주거" | "재정" | "통신" | "보험·医疗" | "학업" | "생활·적응" | "기타";
+type TopicFilter =
+  | "행정·비자"
+  | "주거"
+  | "재정"
+  | "통신"
+  | "보험·의료"
+  | "학업"
+  | "생활·적응"
+  | "기타";
 
-interface Comment {
-  id: number;
+type UiPost = {
+  id: number | string;
+  title: string;
+  content: string;
+  stage: StageFilter;
+  region: string;
+  type: "question" | "trade" | "companion" | "info";
+  topic?: TopicFilter;
+  author: string;
+  date: string;
+  views: number;
+  comments: number;
+  isScraped?: boolean;
+};
+
+type UiComment = {
+  id: number | string;
   author: string;
   content: string;
   date: string;
-  parentId?: number;
-}
-
-const mockPost = {
-  id: 1,
-  title: "독일 뮌헨대 기숙사 신청 방법 아시는 분?",
-  content:
-    "안녕하세요! 2026년 1학기에 뮌헨대로 교환 예정인데, 기숙사 신청 절차가 궁금합니다.\n\n기숙사 종류가 여러 개라고 들었는데 어떤 걸 추천하시나요? Studentenwerk 기숙사랑 사설 기숙사 중에 고민하고 있어요.\n\n경험 있으신 분 공유해주시면 감사하겠습니다!",
-  stage: "pre_depart" as StageFilter,
-  region: "유럽",
-  type: "question",
-  topic: "주거" as TopicFilter,
-  author: "민지",
-  date: "2026.02.20",
-  views: 128,
-  comments: 5,
+  parentId?: number | string;
 };
-
-const mockComments: Comment[] = [
-  { id: 1, author: "수빈", content: "저는 Studentenwerk 기숙사 갔었는데 가격이 훨씬 저렴해요! 다만 신청이 빨라야 해요.", date: "2026.02.20" },
-  { id: 2, author: "하연", content: "저도 궁금합니다! 기숙사 신청 시기가 언제쯤인가요?", date: "2026.02.20" },
-  { id: 3, author: "민지", content: "보통 합격 통보 받고 바로 신청하는 게 좋대요!", date: "2026.02.21", parentId: 2 },
-  { id: 4, author: "지은", content: "사설 기숙사도 나쁘지 않아요. 시설이 더 좋은 편이에요.", date: "2026.02.21" },
-  { id: 5, author: "채원", content: "뮌헨은 주거 구하기 정말 어렵다고 들었어요. 기숙사가 맞을 것 같아요.", date: "2026.02.22" },
-];
 
 const typeLabel: Record<string, string> = {
   question: "질문",
@@ -67,42 +92,242 @@ const topicIconMap: Record<string, React.ReactNode> = {
   "주거": <Home className="h-3 w-3" />,
   "재정": <Wallet className="h-3 w-3" />,
   "통신": <Wifi className="h-3 w-3" />,
-  "보험·医疗": <ShieldCheck className="h-3 w-3" />,
+  "보험·의료": <ShieldCheck className="h-3 w-3" />,
   "학업": <GraduationCap className="h-3 w-3" />,
   "생활·적응": <Compass className="h-3 w-3" />,
   "기타": <MoreHorizontal className="h-3 w-3" />,
 };
 
+function formatDate(dateString?: string) {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return dateString;
+  return date.toLocaleDateString("ko-KR");
+}
+
+function mapStage(value?: string): StageFilter {
+  switch (value) {
+    case "APPLYING":
+      return "pre_assign";
+    case "PRE_DEPARTURE":
+      return "pre_depart";
+    case "ABROAD":
+      return "abroad";
+    case "RETURNED":
+      return "returned";
+    default:
+      return "pre_assign";
+  }
+}
+
+function mapType(value?: string): "question" | "trade" | "companion" | "info" {
+  switch (value) {
+    case "QUESTION":
+      return "question";
+    case "INFO":
+      return "info";
+    case "TRADE":
+      return "trade";
+    case "COMPANION":
+      return "companion";
+    default:
+      return "question";
+  }
+}
+
+function mapTopic(value?: string): TopicFilter | undefined {
+  if (!value) return undefined;
+
+  const topicMap: Record<string, TopicFilter> = {
+    VISA: "행정·비자",
+    HOUSING: "주거",
+    FINANCE: "재정",
+    COMMUNICATION: "통신",
+    MEDICAL: "보험·의료",
+    STUDY: "학업",
+    LIFE: "생활·적응",
+    ETC: "기타",
+
+    "행정·비자": "행정·비자",
+    주거: "주거",
+    재정: "재정",
+    통신: "통신",
+    "보험·의료": "보험·의료",
+    학업: "학업",
+    "생활·적응": "생활·적응",
+    기타: "기타",
+  };
+
+  return topicMap[value];
+}
+
+function mapRegion(value?: string): string {
+  const regionMap: Record<string, string> = {
+    EUROPE: "유럽",
+    AMERICA: "북미",
+    ASIA: "아시아",
+    OCEANIA: "오세아니아",
+  };
+
+  return regionMap[value ?? ""] ?? value ?? "기타";
+}
+
+function toUiComment(comment: CommentItem): UiComment {
+  return {
+    id: comment.id,
+    author: comment.authorNickname ?? "익명",
+    content: comment.content,
+    date: formatDate(comment.createdAt),
+    parentId: comment.parentId ?? undefined,
+  };
+}
+
 const CommunityDetailPage = () => {
   const { id } = useParams();
   const router = useRouter();
+
+  const [post, setPost] = useState<UiPost | null>(null);
+  const [comments, setComments] = useState<UiComment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
   const [commentText, setCommentText] = useState("");
-  const [replyTo, setReplyTo] = useState<number | null>(null);
-  const [comments, setComments] = useState(mockComments);
+  const [replyTo, setReplyTo] = useState<number | string | null>(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
 
-  const post = mockPost;
-  const isQuestionOrInfo = post.type === "question" || post.type === "info";
+  useEffect(() => {
+    const fetchDetail = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-  const isCommentEmpty = !commentText.trim();
+        const [detailData, commentData] = await Promise.all([
+          getArticleDetail(String(id)),
+          getArticleComments(String(id)),
+        ]);
 
-  const handleSubmitComment = () => {
-    if (isCommentEmpty) return;
+        const article = detailData.result;
+        setPost({
+        id: article.id,
+        title: article.title,
+        content: article.content,
+        stage: mapStage(article.exchangeStatus),
+        region: mapRegion(article.region),
+        type: mapType(article.type),
+        topic: mapTopic(article.topic),
+        author: article.authorNickname ?? "익명",
+        date: formatDate(article.createdAt),
+        views: article.viewCount ?? 0,
+        comments: article.commentCount ?? 0,
+      });
 
-    const newComment: Comment = {
-      id: comments.length + 1,
-      author: "나",
-      content: commentText,
-      date: "2026.02.22",
-      parentId: replyTo ?? undefined,
+        setIsBookmarked(!!(article.isScrapped ?? article.scrapped));
+        setComments((commentData.result ?? []).map(toUiComment));
+      } catch (err) {
+        console.error("게시글 상세 조회 실패:", err);
+        setError("게시글을 불러오지 못했습니다.");
+      } finally {
+        setLoading(false);
+      }
     };
-    setComments([...comments, newComment]);
-    setCommentText("");
-    setReplyTo(null);
+
+    if (id) {
+      fetchDetail();
+    }
+  }, [id]);
+
+  const handleSubmitComment = async () => {
+    if (!commentText.trim() || !id) return;
+
+    try {
+      setCommentSubmitting(true);
+
+      await createArticleComment(String(id), {
+      content: commentText,
+      parentId: replyTo ?? undefined,
+    });
+
+      const commentData = await getArticleComments(String(id));
+      const nextComments = (commentData.result ?? []).map(toUiComment);
+
+      setComments(nextComments);
+      setCommentText("");
+      setReplyTo(null);
+
+      setPost((prev) =>
+        prev ? { ...prev, comments: nextComments.length } : prev
+      );
+    } catch (err) {
+      console.error("댓글 작성 실패:", err);
+      alert("댓글 작성에 실패했습니다.");
+    } finally {
+      setCommentSubmitting(false);
+    }
   };
 
-  const topLevelComments = comments.filter((c) => !c.parentId);
-  const getReplies = (parentId: number) => comments.filter((c) => c.parentId === parentId);
+  const handleToggleScrap = async () => {
+    if (!id) return;
+
+    try {
+      if (isBookmarked) {
+        await unscrapArticle(String(id));
+        setIsBookmarked(false);
+      } else {
+        await scrapArticle(String(id));
+        setIsBookmarked(true);
+      }
+    } catch (err) {
+      console.error("스크랩 처리 실패:", err);
+      alert("스크랩 처리에 실패했습니다.");
+    }
+  };
+
+  const handleDeleteArticle = async () => {
+    if (!id) return;
+    const ok = window.confirm("이 게시글을 삭제하시겠습니까?");
+    if (!ok) return;
+
+    try {
+      await deleteArticle(String(id));
+      alert("게시글이 삭제됐습니다.");
+      router.push("/community");
+    } catch (err) {
+      console.error("게시글 삭제 실패:", err);
+      alert("게시글 삭제에 실패했습니다.");
+    }
+  };
+
+  const topLevelComments = useMemo(
+    () => comments.filter((c) => !c.parentId),
+    [comments]
+  );
+
+  const getReplies = (parentId: number | string) =>
+    comments.filter((c) => c.parentId === parentId);
+
+  if (loading) {
+    return (
+      <div className="py-10">
+        <div className="container-tight text-center text-muted-foreground">
+          게시글 불러오는 중...
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !post) {
+    return (
+      <div className="py-10">
+        <div className="container-tight text-center text-destructive">
+          {error || "게시글을 찾을 수 없습니다."}
+        </div>
+      </div>
+    );
+  }
+
+  const isQuestionOrInfo = post.type === "question" || post.type === "info";
+  const isCommentEmpty = !commentText.trim();
 
   return (
     <div className="py-6 sm:py-10">
@@ -115,10 +340,11 @@ const CommunityDetailPage = () => {
           목록으로
         </button>
 
-        {/* 게시글 영역 */}
-        <article className={`card-elevated p-5 sm:p-6 ${
-          isQuestionOrInfo ? "border-l-[3px] border-l-primary/50 bg-primary/[0.03]" : ""
-        }`}>
+        <article
+          className={`card-elevated p-5 sm:p-6 ${
+            isQuestionOrInfo ? "border-l-[3px] border-l-primary/50 bg-primary/[0.03]" : ""
+          }`}
+        >
           <div className="flex items-center gap-2 mb-3.5 flex-wrap">
             <span className={stageBadgeMap[post.stage]}>
               {stageLabelMap[post.stage]}
@@ -137,7 +363,9 @@ const CommunityDetailPage = () => {
             </span>
           </div>
 
-          <h1 className="text-lg sm:text-2xl font-bold text-foreground mb-3">{post.title}</h1>
+          <h1 className="text-lg sm:text-2xl font-bold text-foreground mb-3">
+            {post.title}
+          </h1>
 
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
             <div className="flex items-center gap-2">
@@ -161,35 +389,43 @@ const CommunityDetailPage = () => {
             <Button
               variant={isBookmarked ? "default" : "outline"}
               size="sm"
-              onClick={() => setIsBookmarked(!isBookmarked)}
+              onClick={handleToggleScrap}
               className="rounded-full"
             >
               <Bookmark className={`h-4 w-4 mr-1.5 ${isBookmarked ? "fill-current" : ""}`} />
               {isBookmarked ? "스크랩됨" : "스크랩"}
             </Button>
+
             <Button variant="outline" size="sm" className="rounded-full">
               <Flag className="h-4 w-4 mr-1.5 text-destructive" />
               신고
             </Button>
+
             <div className="flex-1" />
+
             <Button variant="ghost" size="sm" className="text-muted-foreground rounded-full">
               <Edit2 className="h-4 w-4 mr-1.5" />
               수정
             </Button>
-            <Button variant="ghost" size="sm" className="text-destructive rounded-full hover:bg-destructive/10">
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive rounded-full hover:bg-destructive/10"
+              onClick={handleDeleteArticle}
+            >
               <Trash2 className="h-4 w-4 mr-1.5" />
               삭제
             </Button>
           </div>
         </article>
 
-        {/* 댓글 영역 */}
         <div className="mt-8">
           <h2 className="text-base font-bold text-foreground mb-5">댓글 {comments.length}</h2>
 
           <div className="space-y-3">
             {topLevelComments.map((comment) => (
-              <div key={comment.id}>
+              <div key={String(comment.id)}>
                 <div className="card-elevated p-4">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-sm font-medium text-foreground">{comment.author}</span>
@@ -208,7 +444,10 @@ const CommunityDetailPage = () => {
                 </div>
 
                 {getReplies(comment.id).map((reply) => (
-                  <div key={reply.id} className="ml-6 mt-2 card-elevated p-4 border-l-2 border-primary/20 bg-muted/30">
+                  <div
+                    key={String(reply.id)}
+                    className="ml-6 mt-2 card-elevated p-4 border-l-2 border-primary/20 bg-muted/30"
+                  >
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground" />
                       <span className="text-sm font-medium text-foreground">{reply.author}</span>
@@ -227,11 +466,11 @@ const CommunityDetailPage = () => {
                       onKeyDown={(e) => e.key === "Enter" && handleSubmitComment()}
                       className="text-sm bg-card"
                     />
-                    <Button 
-                      size="sm" 
-                      onClick={handleSubmitComment} 
+                    <Button
+                      size="sm"
+                      onClick={handleSubmitComment}
                       className="shrink-0"
-                      disabled={isCommentEmpty}
+                      disabled={isCommentEmpty || commentSubmitting}
                     >
                       <Send className="h-4 w-4" />
                     </Button>
@@ -245,13 +484,19 @@ const CommunityDetailPage = () => {
             <Input
               placeholder={replyTo !== null ? "답글을 입력하세요..." : "댓글을 입력하세요..."}
               value={replyTo === null ? commentText : ""}
-              onChange={(e) => { if (replyTo === null) setCommentText(e.target.value); }}
-              onKeyDown={(e) => { if (replyTo === null && e.key === "Enter") handleSubmitComment(); }}
+              onChange={(e) => {
+                if (replyTo === null) setCommentText(e.target.value);
+              }}
+              onKeyDown={(e) => {
+                if (replyTo === null && e.key === "Enter") handleSubmitComment();
+              }}
               className="bg-muted/50 border-none"
             />
-            <Button 
-              onClick={() => { if (replyTo === null) handleSubmitComment(); }} 
-              disabled={replyTo !== null || isCommentEmpty} // 💡 대댓글 모드이거나 비어있으면 비활성화
+            <Button
+              onClick={() => {
+                if (replyTo === null) handleSubmitComment();
+              }}
+              disabled={replyTo !== null || isCommentEmpty || commentSubmitting}
               className="shrink-0"
             >
               <Send className="h-4 w-4 mr-1.5" />
