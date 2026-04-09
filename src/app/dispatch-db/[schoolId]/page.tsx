@@ -107,10 +107,12 @@ export default function SchoolDetailPage() {
           api.get(`/schools/${schoolId}/articles`),
         ]);
 
-        setSchool(detailRes.data);
-        setEntries(historyRes.data);
-        setPosts(articleRes.data);
-        setIsBookmarked(detailRes.data.isFavorite);
+        setSchool(detailRes.data.result || detailRes.data);
+        setEntries(historyRes.data.result || historyRes.data || []);
+        setPosts(articleRes.data.result || articleRes.data || []);
+
+        const schoolData = detailRes.data.result || detailRes.data;
+        setIsBookmarked(schoolData?.isFavorite || false);
       } catch (err) {
         console.error("상세 정보 로딩 실패:", err);
       } finally {
@@ -150,15 +152,26 @@ export default function SchoolDetailPage() {
     );
   }
 
-  const hasScore = entries.length > 0;
+  const safeEntries = Array.isArray(entries) ? entries : [];
+  const hasScore = safeEntries.length > 0;
   const avgScore = hasScore
-    ? (entries.reduce((sum, e) => sum + e.score, 0) / entries.length).toFixed(1)
+    ? (
+        safeEntries.reduce((sum, e) => sum + e.score, 0) / safeEntries.length
+      ).toFixed(1)
     : null;
-  const maxScore = hasScore ? Math.max(...entries.map((e) => e.score)) : null;
-  const minScore = hasScore ? Math.min(...entries.map((e) => e.score)) : null;
+  const maxScore = hasScore
+    ? Math.max(...safeEntries.map((e) => e.score))
+    : null;
+  const minScore = hasScore
+    ? Math.min(...safeEntries.map((e) => e.score))
+    : null;
 
-  const totalPostPages = Math.max(1, Math.ceil(posts.length / POSTS_PER_PAGE));
-  const pagedPosts = posts.slice(
+  const safePosts = Array.isArray(posts) ? posts : [];
+  const totalPostPages = Math.max(
+    1,
+    Math.ceil(safePosts.length / POSTS_PER_PAGE),
+  );
+  const pagedPosts = safePosts.slice(
     (postPage - 1) * POSTS_PER_PAGE,
     postPage * POSTS_PER_PAGE,
   );
@@ -235,14 +248,15 @@ export default function SchoolDetailPage() {
             <p className="text-xs text-muted-foreground">유명한 전공</p>
 
             <div className="flex flex-wrap gap-1 mt-1">
-              {school.popularMajors.map((m) => (
-                <span
-                  key={m}
-                  className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-full"
-                >
-                  {m}
-                </span>
-              ))}
+              {Array.isArray(school.popularMajors) &&
+                school.popularMajors.map((m) => (
+                  <span
+                    key={m}
+                    className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-full"
+                  >
+                    {m}
+                  </span>
+                ))}
             </div>
           </div>
 
@@ -347,8 +361,8 @@ export default function SchoolDetailPage() {
             </TableHeader>
 
             <TableBody>
-              {entries.length > 0 ? (
-                entries.map((e, idx) => (
+              {safeEntries.length > 0 ? (
+                safeEntries.map((e, idx) => (
                   <TableRow key={idx}>
                     <TableCell>{e.semester}</TableCell>
                     <TableCell className="text-right font-semibold">

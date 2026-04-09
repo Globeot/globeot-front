@@ -192,17 +192,13 @@ const ApplicationDBPage = () => {
     calcResult !== null &&
     !isSubmitting;
 
-  /* ─── 지원서 제출 로직 (수정본) ─── */
+  /* ─── 지원서 제출 로직 ─── */
   const handleTranscriptSubmit = async () => {
     if (!canSubmitTranscript) return;
 
     try {
       setIsSubmitting(true);
-
-      // 1. 여기서 변수를 먼저 선언해야 합니다! (이 줄이 빠져서 에러가 났을 거예요)
       const formData = new FormData();
-
-      // 2. JSON 데이터 구성
       const submitData = {
         testType: examType.toUpperCase(),
         semester: applySemester,

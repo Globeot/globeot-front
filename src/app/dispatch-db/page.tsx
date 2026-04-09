@@ -61,9 +61,10 @@ export default function DispatchDBPage() {
         if (scoreRange.max !== null) params.maxScore = scoreRange.max;
 
         const res = await api.get("/schools", { params });
-        setSchools(res.data);
+        setSchools(res.data.result || []);
       } catch (err) {
         console.error("학교 목록 로딩 실패:", err);
+        setSchools([]);
       } finally {
         setIsLoading(false);
       }
@@ -147,10 +148,11 @@ export default function DispatchDBPage() {
               {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-12">
-                    로딩 중...
+                    {" "}
+                    로딩 중...{" "}
                   </TableCell>
                 </TableRow>
-              ) : schools.length === 0 ? (
+              ) : !Array.isArray(schools) || schools.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={7}
@@ -190,8 +192,11 @@ export default function DispatchDBPage() {
                           {entry.schoolName}
                         </button>
                       </TableCell>
+                      {/* 💡 소수점 둘째 자리까지만 표시되도록 수정한 부분 */}
                       <TableCell className="font-semibold">
-                        {entry.avgScore ?? "N/A"}
+                        {entry.avgScore !== null
+                          ? entry.avgScore.toFixed(2)
+                          : "N/A"}
                       </TableCell>
                       <TableCell>
                         <span
