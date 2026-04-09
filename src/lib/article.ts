@@ -187,8 +187,15 @@ export const searchSchools = async (name: string) => {
 };
 
 export const uploadImage = async (file: string) => {
-  const res = await api.post<UploadImageResponse>("/images/upload", {
-    file,
-  });
-  return res.data;
+  try {
+    const res = await api.post<UploadImageResponse>("/images/upload", {
+      file,
+    });
+    return res.data;
+  } catch (error: any) {
+    console.log("uploadImage 실패 상태:", error?.response?.status);
+    console.log("uploadImage 실패 응답:", error?.response?.data);
+    console.log("uploadImage payload 길이:", file?.length);
+    return null;
+  }
 };

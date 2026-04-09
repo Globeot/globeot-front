@@ -151,6 +151,11 @@ const SchoolAutocomplete = ({
   >([]);
   const ref = useRef<HTMLDivElement>(null);
 
+  const trimmedQuery = query.trim();
+  const hasExactMatch = schools.some(
+    (s) => s.name.trim().toLowerCase() === trimmedQuery.toLowerCase()
+  );
+
   useEffect(() => {
     const h = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -163,13 +168,13 @@ const SchoolAutocomplete = ({
 
   useEffect(() => {
     const fetchSchools = async () => {
-      if (!query.trim()) {
+      if (!trimmedQuery) {
         setSchools([]);
         return;
       }
 
       try {
-        const data = await searchSchools(query.trim());
+        const data = await searchSchools(trimmedQuery);
         setSchools(data.result ?? []);
       } catch (err) {
         console.error("학교 검색 실패:", err);
@@ -179,50 +184,74 @@ const SchoolAutocomplete = ({
 
     const timer = setTimeout(fetchSchools, 300);
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [trimmedQuery]);
 
   return (
     <div ref={ref} className="relative">
-      <div className="flex items-center min-h-[40px] w-full border rounded-md px-2 py-1 gap-1.5">
-        {!value && <Search className="h-4 w-4 text-muted-foreground" />}
-
-        {value && (
+      <div className="flex min-h-[40px] w-full items-center border rounded-md px-2 py-1 gap-1.5">
+        {!value ? (
+          <>
+            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+            <input
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setOpen(true);
+              }}
+              onFocus={() => setOpen(true)}
+              placeholder="학교 검색..."
+              className="flex-1 outline-none bg-transparent"
+            />
+          </>
+        ) : (
           <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded">
             <span>{value.name}</span>
             <button
               type="button"
-              onClick={() => onChange(null)}
+              onClick={() => {
+                onChange(null);
+                setQuery("");
+                setSchools([]);
+                setOpen(false);
+              }}
               className="text-xs"
             >
               ✕
             </button>
           </div>
         )}
-
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setOpen(true)}
-          placeholder="학교 검색..."
-          className="flex-1 outline-none"
-        />
       </div>
 
-      {open && schools.length > 0 && (
-        <div className="absolute bg-white border w-full mt-1 z-50">
+      {!value && open && (
+        <div className="absolute bg-white border w-full mt-1 z-50 rounded-md overflow-hidden shadow-sm">
           {schools.map((s) => (
-            <div
+            <button
               key={String(s.id)}
+              type="button"
               onClick={() => {
                 onChange(s);
                 setOpen(false);
                 setQuery("");
               }}
-              className="p-2 hover:bg-gray-100 cursor-pointer"
+              className="block w-full text-left p-2 hover:bg-gray-100"
             >
               {s.name}
-            </div>
+            </button>
           ))}
+
+          {trimmedQuery && !hasExactMatch && (
+            <button
+              type="button"
+              onClick={() => {
+                onChange({ name: trimmedQuery });
+                setOpen(false);
+                setQuery("");
+              }}
+              className="block w-full text-left p-2 border-t bg-muted/40 hover:bg-muted"
+            >
+              직접 입력한 학교 사용: {trimmedQuery}
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -492,7 +521,13 @@ const CommunityWritePage = () => {
 
       for (const file of images) {
         const base64 = await fileToBase64(file);
-        const uploadRes = await uploadImage(base64);
+const pureBase64 = base64.split(",")[1] ?? base64;
+const uploadRes = await uploadImage(pureBase64);
+
+if (!uploadRes) {
+  alert("이미지 업로드 실패");
+  return;
+}
 
         const urlValues = Object.values(uploadRes.result ?? {}).filter(
           (v): v is string => typeof v === "string" && !!v
@@ -500,8 +535,6 @@ const CommunityWritePage = () => {
 
         uploadedUrls.push(...urlValues);
       }
-
-      // src/app/community/write/page.tsx (약 325번 줄)
 
 const requestBody = {
   title: title.trim(),
