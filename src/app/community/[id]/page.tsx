@@ -469,16 +469,22 @@ const handleReportArticle = async () => {
   <Flag className="h-4 w-4 mr-1.5 text-destructive" />
   신고
 </Button>
+<div className="flex-1" />
 
-            <div className="flex-1" />
-
-            {post.isAuthor && (
-              <>
-                <Button variant="ghost" size="sm" className="text-muted-foreground rounded-full">
-                  <Edit2 className="h-4 w-4 mr-1.5" />
-                  수정
-                </Button>
-
+  {post.isAuthor && (
+    <>
+<Button
+  variant="ghost"
+  size="sm"
+  className="text-muted-foreground rounded-full"
+  onClick={() => {
+    if (!id) return;
+    router.push(`/community/${id}/edit`);
+  }}
+>
+  <Edit2 className="h-4 w-4 mr-1.5" />
+  수정
+</Button>
                 <Button
                   variant="ghost"
                   size="sm"
