@@ -343,7 +343,7 @@ export default function MyPage() {
                 </div>
               )}
 
-              {activeTab === "comments" && (
+{activeTab === "comments" && (
   <div className="space-y-2">
     {comments.length === 0 ? (
       <div className="py-12 text-center text-sm text-muted-foreground">
@@ -351,11 +351,17 @@ export default function MyPage() {
       </div>
     ) : (
       comments.map((comment, idx) => (
-        <div key={String(comment.commentId ?? idx)} className="card-elevated p-4">
+        <div
+          key={String(comment.commentId ?? idx)}
+          className="card-elevated p-4"
+        >
           <p className="text-sm text-foreground">{comment.content}</p>
+
           <p className="text-xs text-muted-foreground mt-2">
-            원글:{" "}
-            <span className="text-primary">
+            <span
+              className="text-primary cursor-pointer hover:underline font-semibold"
+              onClick={() => router.push(`/community/${comment.articleId}`)}
+            >
               {comment.title ?? "제목 정보 없음"}
             </span>{" "}
             · {formatDate(comment.createdAt)}
