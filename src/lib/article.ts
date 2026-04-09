@@ -152,6 +152,58 @@ export const unscrapArticle = async (articleId: string | number) => {
   return res.data;
 };
 
+export async function updateArticle(articleId: string, body: {
+  title?: string;
+  content?: string;
+  region?: string;
+  type?: string;
+  exchangeStatus?: string;
+  topic?: string;
+  schoolId?: number;
+  imageUrls?: string[];
+}) {
+  const token = localStorage.getItem("accessToken");
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/articles/${articleId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    throw new Error("게시글 수정 실패");
+  }
+
+  return res.json();
+}
+
+export async function reportArticle(articleId: string) {
+  const token = localStorage.getItem("accessToken");
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/articles/${articleId}/report`,
+    {
+      method: "POST",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    }
+  );
+
+  const responseText = await res.text();
+  console.log("reportArticle status:", res.status);
+  console.log("reportArticle body:", responseText);
+
+  if (!res.ok) {
+    throw new Error(`게시글 신고 실패: ${res.status} ${responseText}`);
+  }
+
+  return true;
+}
+
 export const deleteArticle = async (articleId: string | number) => {
   const res = await api.delete(`/articles/${articleId}`);
   return res.data;

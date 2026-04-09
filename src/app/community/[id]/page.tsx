@@ -29,6 +29,7 @@ import {
   getArticleDetail,
   scrapArticle,
   unscrapArticle,
+  reportArticle,
   type CommentItem,
 } from "../../../lib/article";
 
@@ -333,6 +334,28 @@ const CommunityDetailPage = () => {
     );
   }
 
+const handleReportArticle = async () => {
+  if (!id) return;
+
+  const ok = window.confirm("이 게시글을 신고하시겠습니까?");
+  if (!ok) return;
+
+  try {
+    console.log("신고 요청 articleId:", String(id));
+    console.log("accessToken 존재 여부:", !!localStorage.getItem("accessToken"));
+
+    await reportArticle(String(id));
+    alert("게시글을 신고했습니다.");
+  } catch (err) {
+    console.error("게시글 신고 실패:", err);
+    alert(
+      err instanceof Error
+        ? err.message
+        : "게시글 신고에 실패했습니다."
+    );
+  }
+};
+
   const isQuestionOrInfo = post.type === "question" || post.type === "info";
   const isCommentEmpty = !commentText.trim();
 
@@ -437,10 +460,15 @@ const CommunityDetailPage = () => {
               {isBookmarked ? "스크랩됨" : "스크랩"}
             </Button>
 
-            <Button variant="outline" size="sm" className="rounded-full">
-              <Flag className="h-4 w-4 mr-1.5 text-destructive" />
-              신고
-            </Button>
+           <Button
+  variant="outline"
+  size="sm"
+  className="rounded-full"
+  onClick={handleReportArticle}
+>
+  <Flag className="h-4 w-4 mr-1.5 text-destructive" />
+  신고
+</Button>
 
             <div className="flex-1" />
 
