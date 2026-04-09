@@ -44,9 +44,10 @@ export type FavoriteSchool = {
   website?: string;
 };
 
+
 export async function getMyProfile() {
-  const res = await api.get<ProfileResponse>("/users/profile");
-  return res.data;
+  const res = await api.get<any>("/users/profile");
+  return res.data.result; // res.data가 아니라 res.data.result를 반환!
 }
 
 export async function updateMyProfile(body: {
@@ -57,27 +58,29 @@ export async function updateMyProfile(body: {
   return res.data;
 }
 
+
 export async function getMyArticles() {
-  const res = await api.get<MyArticle[]>("/users/articles");
-  return res.data;
+  const res = await api.get<any>("/users/articles");
+  return res.data.result; // 게시글 목록도 result 안에 들어있을 확률이 높습니다.
 }
 
+
 export async function getMyComments() {
-  const res = await api.get<MyComment[]>("/users/comments");
-  return res.data;
+  const res = await api.get<any>("/users/comments");
+  return res.data.result; // 댓글 목록도 result 안에 들어있을 확률이 높습니다.
 }
 
 export async function getMyScraps() {
-  const res = await api.get<MyScrap[]>("/users/scraps");
-  return res.data;
+  const res = await api.get<any>("/users/scraps");
+  return res.data.result; // 스크랩 목록도 result 안에 들어있을 확률이 높습니다.
 }
 
 export async function getMyFavorites() {
-  const res = await api.get<FavoriteSchool[]>("/users/favorites");
-  return res.data;
+  const res = await api.get<any>("/users/favorites");
+  return res.data.result; // 관심 학교 목록도 result 안에 들어있을 확률이 높습니다.
 }
 
 export async function deleteMe() {
   const res = await api.delete("/users/me");
-  return res.data;
+  return res.data.result;
 }

@@ -109,10 +109,11 @@ export default function MyPage() {
         setLoadingProfile(true);
         setProfileError("");
         const data = await getMyProfile();
+        console.log("내 프로필 데이터:", data);
 
         setNickname(data.nickname ?? "");
         setEmail(data.email ?? "");
-        setStage((data.stage as StageValue) ?? "ABROAD");
+        setStage((data.exchangeStatus ?? "ABROAD"));
       } catch (error) {
         console.error("프로필 조회 실패:", error);
         setProfileError("프로필을 불러오지 못했습니다. 로그인 상태를 확인하세요.");
@@ -356,6 +357,7 @@ export default function MyPage() {
                           원글:{" "}
                           <span className="text-primary">
                             {comment.articleTitle ?? "제목 정보 없음"}
+                            console.log("댓글 목록:", comments);
                           </span>{" "}
                           · {formatDate(comment.createdAt)}
                         </p>
