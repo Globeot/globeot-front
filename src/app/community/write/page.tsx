@@ -501,16 +501,18 @@ const CommunityWritePage = () => {
         uploadedUrls.push(...urlValues);
       }
 
-      const requestBody = {
-        title: title.trim(),
-        content: htmlContent,
-        region: mapRegionToApi(region),
-        type: mapTypeToApi(type),
-        exchangeStatus: mapStageToApi(stage),
-        topic: topic ? mapTopicToApi(topic) : undefined,
-        schoolId: school?.id ?? undefined,
-        imageUrls: uploadedUrls,
-      };
+      // src/app/community/write/page.tsx (약 325번 줄)
+
+const requestBody = {
+  title: title.trim(),
+  content: htmlContent,
+  region: mapRegionToApi(region),
+  type: mapTypeToApi(type),
+  exchangeStatus: mapStageToApi(stage),
+  topic: topic ? mapTopicToApi(topic) : "ETC", 
+  schoolId: school?.id ? Number(school.id) : undefined, // 숫자로 형변환 확인
+  imageUrls: uploadedUrls,
+};
 
       console.log("게시글 작성 요청 body:", requestBody);
 

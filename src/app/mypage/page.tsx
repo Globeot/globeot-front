@@ -344,29 +344,27 @@ export default function MyPage() {
               )}
 
               {activeTab === "comments" && (
-                <div className="space-y-2">
-                  {comments.length === 0 ? (
-                    <div className="py-12 text-center text-sm text-muted-foreground">
-                      작성한 댓글이 없습니다.
-                    </div>
-                  ) : (
-                    comments.map((comment, idx) => (
-                      <div key={String(comment.commentId ?? idx)} className="card-elevated p-4">
-                        <p className="text-sm text-foreground">{comment.content}</p>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          원글:{" "}
-                          <span className="text-primary">
-                            {comment.articleTitle ?? "제목 정보 없음"}
-                            console.log("댓글 목록:", comments);
-                          </span>{" "}
-                          · {formatDate(comment.createdAt)}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-
+  <div className="space-y-2">
+    {comments.length === 0 ? (
+      <div className="py-12 text-center text-sm text-muted-foreground">
+        작성한 댓글이 없습니다.
+      </div>
+    ) : (
+      comments.map((comment, idx) => (
+        <div key={String(comment.commentId ?? idx)} className="card-elevated p-4">
+          <p className="text-sm text-foreground">{comment.content}</p>
+          <p className="text-xs text-muted-foreground mt-2">
+            원글:{" "}
+            <span className="text-primary">
+              {comment.title ?? "제목 정보 없음"}
+            </span>{" "}
+            · {formatDate(comment.createdAt)}
+          </p>
+        </div>
+      ))
+    )}
+  </div>
+)}
               {activeTab === "scraps" && (
                 <div className="space-y-2">
                   {scraps.length === 0 ? (

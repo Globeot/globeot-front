@@ -21,6 +21,7 @@ export type MyComment = {
   content: string;
   createdAt: string;
   articleId?: number | string;
+  title?: string;
   articleTitle?: string;
 };
 
@@ -61,24 +62,23 @@ export async function updateMyProfile(body: {
 
 export async function getMyArticles() {
   const res = await api.get<any>("/users/articles");
-  return res.data.result; // 게시글 목록도 result 안에 들어있을 확률이 높습니다.
+  return res.data.result;
 }
 
 
 export async function getMyComments() {
   const res = await api.get<any>("/users/comments");
-  return res.data.result; // 댓글 목록도 result 안에 들어있을 확률이 높습니다.
+  return res.data.result;
 }
 
 export async function getMyScraps() {
   const res = await api.get<any>("/users/scraps");
-  return res.data.result; // 스크랩 목록도 result 안에 들어있을 확률이 높습니다.
+  return res.data.result;
 }
 
 export async function getMyFavorites() {
   const res = await api.get<any>("/users/favorites");
-  return res.data.result; // 관심 학교 목록도 result 안에 들어있을 확률이 높습니다.
-}
+  return res.data.result;}
 
 export async function deleteMe() {
   const res = await api.delete("/users/me");
