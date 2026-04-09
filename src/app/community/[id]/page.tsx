@@ -391,9 +391,40 @@ const CommunityDetailPage = () => {
           <Separator className="mb-5" />
 
 <div 
-  className="text-sm sm:text-base text-foreground leading-relaxed mb-8 prose max-w-none" 
+  className="article-content text-sm sm:text-base text-foreground leading-relaxed mb-8 max-w-none"
   dangerouslySetInnerHTML={{ __html: post.content }} 
 />
+
+<style>{`
+  .article-content h1 { font-size: 2em; font-weight: 700; margin: 0.67em 0; display: block; }
+  .article-content h2 { font-size: 1.5em; font-weight: 700; margin: 0.75em 0; display: block; }
+  .article-content h3 { font-size: 1.25em; font-weight: 600; margin: 0.83em 0; display: block; }
+
+  .article-content ul {
+    list-style-type: disc;
+    padding-left: 1.5em;
+    margin: 0.5em 0;
+  }
+
+  .article-content ol {
+    list-style-type: decimal;
+    padding-left: 1.5em;
+    margin: 0.5em 0;
+  }
+
+  .article-content li {
+    display: list-item;
+    margin: 0.25em 0;
+  }
+
+  .article-content strong {
+    font-weight: 700;
+  }
+
+  .article-content em {
+    font-style: italic;
+  }
+`}</style>
 
           <div className="flex items-center gap-2 flex-wrap">
             <Button
