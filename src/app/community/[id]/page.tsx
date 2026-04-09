@@ -370,6 +370,8 @@ const CommunityDetailPage = () => {
             </span>
           </div>
 
+          
+
           <h1 className="text-lg sm:text-2xl font-bold text-foreground mb-3">
             {post.title}
           </h1>
@@ -388,9 +390,10 @@ const CommunityDetailPage = () => {
 
           <Separator className="mb-5" />
 
-          <div className="text-sm sm:text-base text-foreground leading-relaxed whitespace-pre-line mb-8">
-            {post.content}
-          </div>
+<div 
+  className="text-sm sm:text-base text-foreground leading-relaxed mb-8 prose max-w-none" 
+  dangerouslySetInnerHTML={{ __html: post.content }} 
+/>
 
           <div className="flex items-center gap-2 flex-wrap">
             <Button
