@@ -370,11 +370,7 @@ const handleReportArticle = async () => {
           목록으로
         </button>
 
-        <article
-          className={`card-elevated p-5 sm:p-6 ${
-            isQuestionOrInfo ? "border-l-[3px] border-l-primary/50 bg-primary/[0.03]" : ""
-          }`}
-        >
+       <article className="card-elevated p-5 sm:p-6">
           <div className="flex items-center gap-2 mb-3.5 flex-wrap">
             <span className={stageBadgeMap[post.stage]}>
               {stageLabelMap[post.stage]}
