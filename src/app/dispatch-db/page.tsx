@@ -45,6 +45,7 @@ export default function DispatchDBPage() {
   const [scoreRange, setScoreRange] = useState(scoreRanges[0]);
   const [schools, setSchools] = useState<DispatchEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoginRequired, setIsLoginRequired] = useState(false);
 
   // 학교 목록 불러오기
   useEffect(() => {
@@ -61,9 +62,20 @@ export default function DispatchDBPage() {
         if (scoreRange.max !== null) params.maxScore = scoreRange.max;
 
         const res = await api.get("/schools", { params });
+
         setSchools(res.data.result || []);
-      } catch (err) {
+        setIsLoginRequired(false);
+      } catch (err: any) {
         console.error("학교 목록 로딩 실패:", err);
+
+        const status = err?.response?.status;
+
+        if (status === 401 || status === 403) {
+          setIsLoginRequired(true);
+        } else {
+          setIsLoginRequired(false);
+        }
+
         setSchools([]);
       } finally {
         setIsLoading(false);
@@ -150,6 +162,25 @@ export default function DispatchDBPage() {
                   <TableCell colSpan={7} className="text-center py-12">
                     {" "}
                     로딩 중...{" "}
+                  </TableCell>
+                </TableRow>
+              ) : isLoginRequired ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-12">
+                    <div className="flex flex-col items-center gap-4">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">
+                          로그인한 사용자만 볼 수 있습니다.
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          학교별 DB를 확인하려면 먼저 로그인해주세요.
+                        </p>
+                      </div>
+
+                      <Button onClick={() => router.push("/login")}>
+                        로그인하러 가기
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : !Array.isArray(schools) || schools.length === 0 ? (
