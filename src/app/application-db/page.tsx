@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trophy, Upload, ImageIcon, X } from "lucide-react";
 import { Input } from "../../components/ui/input";
@@ -135,6 +135,8 @@ const ApplicationDBPage = () => {
     "",
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [isLoginRequired, setIsLoginRequired] = useState(false);
 
   const ieltsToToefl: Record<number, number> = {
     9: 30,
@@ -148,6 +150,14 @@ const ApplicationDBPage = () => {
     5: 8,
     4.5: 4,
     4: 0,
+    3.5: 0,
+    3: 0,
+    2.5: 0,
+    2: 0,
+    1.5: 0,
+    1: 0,
+    0.5: 0,
+    0: 0,
   };
 
   const calculate = () => {
@@ -191,7 +201,26 @@ const ApplicationDBPage = () => {
     schoolChoices[0] &&
     calcResult !== null &&
     !isSubmitting;
+  useEffect(() => {
+    const checkLogin = async () => {
+      try {
+        await api.get("/users/me");
+        setIsLoginRequired(false);
+      } catch (err: any) {
+        const status = err?.response?.status;
 
+        if (status === 401 || status === 403) {
+          setIsLoginRequired(true);
+        } else {
+          setIsLoginRequired(false);
+        }
+      } finally {
+        setIsAuthChecking(false);
+      }
+    };
+
+    checkLogin();
+  }, []);
   /* ─── 지원서 제출 로직 ─── */
   const handleTranscriptSubmit = async () => {
     if (!canSubmitTranscript) return;
@@ -230,7 +259,7 @@ const ApplicationDBPage = () => {
         router.push("/application-db/pending");
       }
     } catch (err: any) {
-      console.error("상세 에러:", err);
+      console.warn("지원서 제출 실패:", err?.response?.status);
       alert(err.response?.data?.message || "제출 실패");
     } finally {
       setIsSubmitting(false);
@@ -242,6 +271,42 @@ const ApplicationDBPage = () => {
     next[index] = value;
     setSchoolChoices(next);
   };
+
+  if (isAuthChecking) {
+    return (
+      <main className="min-h-screen bg-background">
+        <div className="mx-auto max-w-5xl px-6 py-20 text-center text-muted-foreground">
+          로그인 상태를 확인하는 중...
+        </div>
+      </main>
+    );
+  }
+
+  if (isLoginRequired) {
+    return (
+      <main className="min-h-screen bg-background">
+        <div className="mx-auto flex min-h-[70vh] max-w-5xl items-center justify-center px-6 py-20">
+          <div className="w-full max-w-md rounded-2xl border bg-card p-8 text-center shadow-sm">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <Trophy className="h-6 w-6 text-primary" />
+            </div>
+
+            <h2 className="text-lg font-bold text-foreground">
+              로그인한 사용자만 환산 점수 계산기를 사용할 수 있습니다.
+            </h2>
+
+            <p className="mt-2 text-sm text-muted-foreground">
+              지원 랭킹과 환산 점수를 확인하려면 먼저 로그인해주세요.
+            </p>
+
+            <Button className="mt-5" onClick={() => router.push("/login")}>
+              로그인하러 가기
+            </Button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <div className="py-6 sm:py-10">

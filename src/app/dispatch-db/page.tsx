@@ -66,16 +66,16 @@ export default function DispatchDBPage() {
         setSchools(res.data.result || []);
         setIsLoginRequired(false);
       } catch (err: any) {
-        console.error("학교 목록 로딩 실패:", err);
-
         const status = err?.response?.status;
 
         if (status === 401 || status === 403) {
           setIsLoginRequired(true);
-        } else {
-          setIsLoginRequired(false);
+          setSchools([]);
+          return;
         }
 
+        console.warn("학교 목록 로딩 실패:", status);
+        setIsLoginRequired(false);
         setSchools([]);
       } finally {
         setIsLoading(false);
