@@ -153,7 +153,7 @@ const SchoolAutocomplete = ({
 
   const trimmedQuery = query.trim();
   const hasExactMatch = schools.some(
-    (s) => s.name.trim().toLowerCase() === trimmedQuery.toLowerCase()
+    (s) => s.name.trim().toLowerCase() === trimmedQuery.toLowerCase(),
   );
 
   useEffect(() => {
@@ -389,13 +389,13 @@ const TradeStatusDropdown = ({
 function mapTopicToApi(value: string): string {
   const map: Record<string, string> = {
     "행정·비자": "VISA",
-    "주거": "HOUSING",
-    "재정": "FINANCE",
-    "통신": "COMMUNICATION",
+    주거: "HOUSING",
+    재정: "FINANCE",
+    통신: "COMMUNICATION",
     "보험·의료": "MEDICAL",
-    "학업": "ACADEMIC",
+    학업: "ACADEMIC",
     "생활·적응": "LIFE",
-    "기타": "ETC",
+    기타: "ETC",
   };
   return map[value] ?? value;
 }
@@ -492,7 +492,11 @@ const CommunityWritePage = () => {
       },
     },
     onUpdate: ({ editor }) => {
-      const pureText = editor.getText().replace(/\n/g, "").replace(/\s+/g, "").trim();
+      const pureText = editor
+        .getText()
+        .replace(/\n/g, "")
+        .replace(/\s+/g, "")
+        .trim();
       setContentLength(pureText.length);
     },
   });
@@ -501,7 +505,8 @@ const CommunityWritePage = () => {
 
   const isBaseInfoValid = !!(stage && region && type);
   const isTopicValid = !isQuestionOrInfo || !!topic;
-  const isDateValid = type !== "companion" || !!(dateRange?.from && dateRange?.to);
+  const isDateValid =
+    type !== "companion" || !!(dateRange?.from && dateRange?.to);
   const isTitleValid = title.trim().length > 0;
   const isContentValid = contentLength >= 10;
 
@@ -521,33 +526,31 @@ const CommunityWritePage = () => {
 
       for (const file of images) {
         const base64 = await fileToBase64(file);
-const pureBase64 = base64.split(",")[1] ?? base64;
-const uploadRes = await uploadImage(pureBase64);
+        const pureBase64 = base64.split(",")[1] ?? base64;
+        const uploadRes = await uploadImage(pureBase64);
 
-if (!uploadRes) {
-  alert("이미지 업로드 실패");
-  return;
-}
+        if (!uploadRes) {
+          alert("이미지 업로드 실패");
+          return;
+        }
 
         const urlValues = Object.values(uploadRes.result ?? {}).filter(
-          (v): v is string => typeof v === "string" && !!v
+          (v): v is string => typeof v === "string" && !!v,
         );
 
         uploadedUrls.push(...urlValues);
       }
 
-const requestBody = {
-  title: title.trim(),
-  content: htmlContent,
-  region: mapRegionToApi(region),
-  type: mapTypeToApi(type),
-  exchangeStatus: mapStageToApi(stage),
-  topic: topic ? mapTopicToApi(topic) : "ETC", 
-  schoolId: school?.id ? Number(school.id) : undefined, // 숫자로 형변환 확인
-  imageUrls: uploadedUrls,
-};
-
-      console.log("게시글 작성 요청 body:", requestBody);
+      const requestBody = {
+        title: title.trim(),
+        content: htmlContent,
+        region: mapRegionToApi(region),
+        type: mapTypeToApi(type),
+        exchangeStatus: mapStageToApi(stage),
+        topic: topic ? mapTopicToApi(topic) : "ETC",
+        schoolId: school?.id ? Number(school.id) : undefined, // 숫자로 형변환 확인
+        imageUrls: uploadedUrls,
+      };
 
       await createArticle(requestBody);
 
@@ -663,7 +666,10 @@ const requestBody = {
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   판매 상태
                 </label>
-                <TradeStatusDropdown value={isTradeDone} onChange={setIsTradeDone} />
+                <TradeStatusDropdown
+                  value={isTradeDone}
+                  onChange={setIsTradeDone}
+                />
               </div>
             )}
           </div>
@@ -870,7 +876,11 @@ const requestBody = {
                     key={idx}
                     className="relative group w-24 h-24 rounded-xl overflow-hidden border-2 border-background shadow-md"
                   >
-                    <img src={src} alt="preview" className="w-full h-full object-cover" />
+                    <img
+                      src={src}
+                      alt="preview"
+                      className="w-full h-full object-cover"
+                    />
                     <button
                       type="button"
                       onClick={() => {
