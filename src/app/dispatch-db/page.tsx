@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { Input } from "../../components/ui/input";
@@ -38,7 +38,7 @@ const scoreRanges = [
   { label: "점수 없음", min: null, max: null },
 ];
 
-export default function DispatchDBPage() {
+function DispatchDBPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -370,5 +370,19 @@ export default function DispatchDBPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function DispatchDBPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="py-20 text-center text-muted-foreground">
+          로딩 중...
+        </div>
+      }
+    >
+      <DispatchDBPageContent />
+    </Suspense>
   );
 }
