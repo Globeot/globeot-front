@@ -11,6 +11,11 @@ import { gpaToPercentile } from "./gpaData";
 import { ImageUploadButton } from "../../components/tiptap-ui/image-upload-button";
 import api from "../../lib/api";
 
+type SchoolSearchItem = {
+  id: number;
+  name: string;
+};
+
 const SchoolAutocomplete = ({
   rank,
   required,
@@ -26,22 +31,56 @@ const SchoolAutocomplete = ({
 }) => {
   const [query, setQuery] = useState(value);
   const [open, setOpen] = useState(false);
+  const [suggestions, setSuggestions] = useState<SchoolSearchItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const available = allSchools.filter((s) => !exclude.includes(s));
-  const suggestions = query
-    ? available.filter((s) => s.toLowerCase().includes(query.toLowerCase()))
-    : available;
+  useEffect(() => {
+    setQuery(value);
+  }, [value]);
 
-  const select = (s: string) => {
-    setQuery(s);
-    onChange(s);
+  useEffect(() => {
+    if (!open) return;
+
+    const fetchSchools = async () => {
+      try {
+        setIsSearching(true);
+
+        const res = await api.get("/schools/search", {
+          params: {
+            keyword: query || "",
+          },
+        });
+
+        const result = Array.isArray(res.data?.result) ? res.data.result : [];
+
+        setSuggestions(
+          result.filter(
+            (school: SchoolSearchItem) => !exclude.includes(school.name),
+          ),
+        );
+      } catch (err: any) {
+        console.warn("희망학교 검색 실패:", err?.response?.status);
+        setSuggestions([]);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const timer = setTimeout(fetchSchools, 300);
+    return () => clearTimeout(timer);
+  }, [query, open, exclude]);
+
+  const select = (schoolName: string) => {
+    setQuery(schoolName);
+    onChange(schoolName);
     setOpen(false);
   };
 
   const clear = () => {
     setQuery("");
     onChange("");
+    setSuggestions([]);
   };
 
   return (
@@ -49,6 +88,7 @@ const SchoolAutocomplete = ({
       <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap shrink-0 w-14">
         {rank}순위{required ? " *" : ""}
       </span>
+
       <div className="relative flex-1" ref={ref}>
         <Input
           placeholder="학교 검색..."
@@ -61,33 +101,38 @@ const SchoolAutocomplete = ({
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
         />
+
         {value && (
           <button
+            type="button"
             onClick={clear}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         )}
+
         {open && (
           <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border rounded-lg shadow-md max-h-[180px] overflow-y-auto py-1">
-            {suggestions.length > 0 ? (
-              suggestions.map((s) => (
+            {isSearching ? (
+              <div className="px-3 py-2 text-sm text-muted-foreground">
+                검색 중...
+              </div>
+            ) : suggestions.length > 0 ? (
+              suggestions.map((school, index) => (
                 <button
-                  key={s}
-                  onMouseDown={() => select(s)}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                  type="button"
+                  key={`${school.id}-${index}`}
+                  onMouseDown={() => select(school.name)}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-muted cursor-pointer"
                 >
-                  {s}
+                  {school.name}
                 </button>
               ))
             ) : (
-              <button
-                onMouseDown={() => select(query)}
-                className="w-full text-left px-3 py-2 text-sm text-primary hover:bg-muted"
-              >
-                ➕ "{query}" 추가하기
-              </button>
+              <div className="px-3 py-2 text-sm text-muted-foreground">
+                검색 결과가 없습니다.
+              </div>
             )}
           </div>
         )}
@@ -97,19 +142,6 @@ const SchoolAutocomplete = ({
 };
 
 type ExamType = "toefl" | "ielts";
-
-const allSchools = [
-  "뮌헨대학교",
-  "소르본대학교",
-  "UCLA",
-  "바르셀로나대학교",
-  "도쿄대학교",
-  "UCL",
-  "베를린자유대학교",
-  "하이델베르크대학교",
-  "옥스퍼드대학교",
-  "케임브리지대학교",
-];
 
 const semesterOptions = ["2027-2", "2027-1"] as const;
 

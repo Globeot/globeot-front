@@ -248,7 +248,7 @@ const LoginPage = () => {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {mode === "login"
-              ? "EwhaAbroad에 오신 것을 환영합니다"
+              ? "글로벗에 오신 것을 환영합니다"
               : signupStep === 1
                 ? "학교 이메일로 인증해 주세요"
                 : signupStep === 2
@@ -380,10 +380,14 @@ const LoginPage = () => {
                     type="button"
                     variant="outline"
                     onClick={handleCheckNickname}
-                    disabled={isCheckingNickname}
-                    className="shrink-0"
+                    disabled={isCheckingNickname || isNicknameChecked}
+                    className="shrink-0 disabled:cursor-not-allowed"
                   >
-                    {isCheckingNickname ? "확인 중..." : "중복확인"}
+                    {isCheckingNickname
+                      ? "확인 중..."
+                      : isNicknameChecked
+                        ? "확인 완료"
+                        : "중복확인"}
                   </Button>
                 </div>
               </div>
