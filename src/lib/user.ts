@@ -35,16 +35,16 @@ export type MyScrap = {
 };
 
 export type FavoriteSchool = {
+  favoriteId?: number;
   schoolId?: number | string;
   name: string;
   country?: string;
   city?: string;
-  convertedScore?: number;
-  travelAccess?: string;
-  livingCost?: string;
-  website?: string;
+  avgScore?: number;
+  travelAccessLevel?: "HIGHEST" | "HIGH" | "MEDIUM" | "LOW" | null;
+  monthlyCost?: string;
+  officialSite?: string;
 };
-
 
 export async function getMyProfile() {
   const res = await api.get<any>("/users/profile");
