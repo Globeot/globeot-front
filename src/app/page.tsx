@@ -26,7 +26,7 @@ const features = [
     description:
       "지역별, 점수대별 학교를 비교하고 나에게 맞는 학교를 찾아보세요.",
     link: "/dispatch-db",
-    color: "bg-secondary text-secondary-foreground",
+    color: "bg-accent text-accent-foreground",
   },
 ];
 
