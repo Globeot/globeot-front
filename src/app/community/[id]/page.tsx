@@ -197,6 +197,9 @@ const CommunityDetailPage = () => {
   const [replyTo, setReplyTo] = useState<number | string | null>(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+const [reportReason, setReportReason] = useState("");
+const [reportSubmitting, setReportSubmitting] = useState(false);
 
 useEffect(() => {
   const token = localStorage.getItem("accessToken");
@@ -360,19 +363,25 @@ if (!isLoggedIn) {
   }
 
   const handleReportArticle = async () => {
-    if (!id) return;
+  if (!id || !reportReason.trim()) return;
 
-    const ok = window.confirm("이 게시글을 신고하시겠습니까?");
-    if (!ok) return;
+  try {
+    setReportSubmitting(true);
 
-    try {
-      await reportArticle(String(id));
-      alert("게시글을 신고했습니다.");
-    } catch (err) {
-      console.error("게시글 신고 실패:", err);
-      alert(err instanceof Error ? err.message : "게시글 신고에 실패했습니다.");
-    }
-  };
+    await reportArticle(String(id), {
+      reason: reportReason.trim(),
+    });
+
+    alert("신고가 접수됐습니다.");
+    setReportOpen(false);
+    setReportReason("");
+  } catch (err) {
+    console.error("게시글 신고 실패:", err);
+    alert(err instanceof Error ? err.message : "게시글 신고에 실패했습니다.");
+  } finally {
+    setReportSubmitting(false);
+  }
+};
 
   const isQuestionOrInfo = post.type === "question" || post.type === "info";
   const isCommentEmpty = !commentText.trim();
@@ -475,14 +484,14 @@ if (!isLoggedIn) {
             </Button>
 
             <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full"
-              onClick={handleReportArticle}
-            >
-              <Flag className="h-4 w-4 mr-1.5 text-destructive" />
-              신고
-            </Button>
+  variant="outline"
+  size="sm"
+  className="rounded-full"
+  onClick={() => setReportOpen(true)}
+>
+  <Flag className="h-4 w-4 mr-1.5 text-destructive" />
+  신고
+</Button>
             <div className="flex-1" />
 
             {post.isAuthor && (
@@ -512,6 +521,60 @@ if (!isLoggedIn) {
             )}
           </div>
         </article>
+
+            {reportOpen && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+    <div className="w-full max-w-md rounded-2xl bg-card p-5 shadow-xl">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-bold text-foreground">신고하기</h2>
+
+        <button
+          type="button"
+          onClick={() => {
+            setReportOpen(false);
+            setReportReason("");
+          }}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="space-y-2">
+       <label className="mb-4 block text-sm font-medium text-foreground">
+  신고 사유 <span className="text-destructive">*</span>
+</label>
+
+        <textarea
+          value={reportReason}
+          onChange={(e) => setReportReason(e.target.value)}
+          placeholder="신고 사유를 입력하세요."
+          className="min-h-[120px] w-full resize-none rounded-xl border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary"
+        />
+      </div>
+
+      <div className="mt-5 flex justify-end gap-2">
+        <Button
+          variant="outline"
+          onClick={() => {
+            setReportOpen(false);
+            setReportReason("");
+          }}
+        >
+          취소
+        </Button>
+
+        <Button
+          onClick={handleReportArticle}
+          disabled={!reportReason.trim() || reportSubmitting}
+          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        >
+          {reportSubmitting ? "제출 중..." : "제출하기"}
+        </Button>
+      </div>
+    </div>
+  </div>
+)}
 
         <div className="mt-8">
           <h2 className="text-base font-bold text-foreground mb-5">
@@ -624,7 +687,5 @@ if (!isLoggedIn) {
 
   
 };
-
-
 
 export default CommunityDetailPage;

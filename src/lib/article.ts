@@ -12,7 +12,7 @@ export type RegionType =
   | "ASIA"
   | "OCEANIA"
   | "ETC";
-  
+
 export type ArticleItem = {
   id: number | string;
   title: string;
@@ -180,8 +180,11 @@ export const updateArticle = async (
   const res = await api.patch(`/articles/${articleId}`, body);
   return res.data;
 };
-export const reportArticle = async (articleId: string | number) => {
-  const res = await api.post(`/articles/${articleId}/report`);
+export const reportArticle = async (
+  articleId: string,
+  body: { reason: string },
+) => {
+  const res = await api.post(`/articles/${articleId}/reports`, body);
   return res.data;
 };
 
