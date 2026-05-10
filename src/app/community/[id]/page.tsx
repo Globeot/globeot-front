@@ -67,7 +67,6 @@ type UiComment = {
   date: string;
   parentId?: number | string;
 };
-
 const typeLabel: Record<string, string> = {
   question: "질문",
   trade: "중고거래",
@@ -198,50 +197,57 @@ const CommunityDetailPage = () => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
 
-  useEffect(() => {
-    const fetchDetail = async () => {
-      try {
-        setLoading(true);
-        setError("");
+useEffect(() => {
+  const token = localStorage.getItem("accessToken");
 
-        const [detailData, commentData] = await Promise.all([
-          getArticleDetail(String(id)),
-          getArticleComments(String(id)),
-        ]);
+  if (!token) {
+    setLoading(false);
+    return;
+  }
 
-        const article = detailData.result;
+  const fetchDetail = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-        const mappedPost: UiPost = {
-          id: article.id,
-          title: article.title,
-          content: article.content,
-          stage: mapStage(article.exchangeStatus),
-          region: mapRegion(article.region),
-          type: mapType(article.type),
-          topic: mapTopic(article.topic),
-          author: article.authorNickname ?? "익명",
-          date: formatDate(article.createdAt),
-          views: article.viewCount ?? 0,
-          comments: article.commentCount ?? 0,
-          isScraped: article.isScrapped ?? article.scrapped ?? false,
-          isAuthor: article.isAuthor ?? article.author ?? false,
-        };
+      const [detailData, commentData] = await Promise.all([
+        getArticleDetail(String(id)),
+        getArticleComments(String(id)),
+      ]);
 
-        setPost(mappedPost);
-        setIsBookmarked(!!(article.isScrapped ?? article.scrapped));
-        setComments((commentData.result ?? []).map(toUiComment));
-      } catch (err) {
-        console.error("게시글 상세 조회 실패:", err);
-        setError("게시글을 불러오지 못했습니다.");
-      } finally {
-        setLoading(false);
-      }
-    };
+      const article = detailData.result;
 
-    if (id) {
-      fetchDetail();
+      const mappedPost: UiPost = {
+        id: article.id,
+        title: article.title,
+        content: article.content,
+        stage: mapStage(article.exchangeStatus),
+        region: mapRegion(article.region),
+        type: mapType(article.type),
+        topic: mapTopic(article.topic),
+        author: article.authorNickname ?? "익명",
+        date: formatDate(article.createdAt),
+        views: article.viewCount ?? 0,
+        comments: article.commentCount ?? 0,
+        isScraped: article.isScrapped ?? article.scrapped ?? false,
+        isAuthor: article.isAuthor ?? article.author ?? false,
+      };
+
+      setPost(mappedPost);
+      setIsBookmarked(!!(article.isScrapped ?? article.scrapped));
+      setComments((commentData.result ?? []).map(toUiComment));
+    } catch (err) {
+      console.error("게시글 상세 조회 실패:", err);
+      setError("게시글을 불러오지 못했습니다.");
+    } finally {
+      setLoading(false);
     }
-  }, [id]);
+  };
+
+  if (id) {
+    fetchDetail();
+  }
+}, [id]);
 
   const handleSubmitComment = async () => {
     if (!commentText.trim() || !id) return;
@@ -298,7 +304,7 @@ const CommunityDetailPage = () => {
 
     try {
       await deleteArticle(String(id));
-      alert("게시글이 삭제됐습니다.");
+      alert("게시글이 삭제되었습니다.");
       router.push("/community");
     } catch (err) {
       console.error("게시글 삭제 실패:", err);
@@ -323,6 +329,24 @@ const CommunityDetailPage = () => {
       </div>
     );
   }
+  const isLoggedIn =
+  typeof window !== "undefined" && !!localStorage.getItem("accessToken");
+
+if (!isLoggedIn) {
+  return (
+    <div className="py-20">
+      <div className="container-tight text-center">
+        <p className="text-muted-foreground mb-4">
+          로그인한 사용자만 볼 수 있습니다.
+        </p>
+
+        <Button onClick={() => router.push("/login")}>
+          로그인
+        </Button>
+      </div>
+    </div>
+  );
+}
 
   if (error || !post) {
     return (
@@ -596,6 +620,10 @@ const CommunityDetailPage = () => {
       </div>
     </div>
   );
+
+  
 };
+
+
 
 export default CommunityDetailPage;

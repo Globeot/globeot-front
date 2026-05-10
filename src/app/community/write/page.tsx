@@ -162,6 +162,7 @@ const SchoolAutocomplete = ({
         setOpen(false);
       }
     };
+
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
@@ -174,7 +175,7 @@ const SchoolAutocomplete = ({
       }
 
       try {
-        const data = await searchSchools(trimmedQuery);
+        const data = await searchSchools(trimmedQuery.toLowerCase());
         setSchools(data.result ?? []);
       } catch (err) {
         console.error("학교 검색 실패:", err);
@@ -188,10 +189,10 @@ const SchoolAutocomplete = ({
 
   return (
     <div ref={ref} className="relative">
-      <div className="flex min-h-[40px] w-full items-center border rounded-md px-2 py-1 gap-1.5">
+      <div className="flex min-h-[40px] w-full items-center gap-1.5 rounded-md border px-2 py-1">
         {!value ? (
           <>
-            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
             <input
               value={query}
               onChange={(e) => {
@@ -200,11 +201,11 @@ const SchoolAutocomplete = ({
               }}
               onFocus={() => setOpen(true)}
               placeholder="학교 검색..."
-              className="flex-1 outline-none bg-transparent"
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
           </>
         ) : (
-          <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded">
+          <div className="flex items-center gap-1 rounded bg-primary/10 px-2 py-1 text-xs text-primary">
             <span>{value.name}</span>
             <button
               type="button"
@@ -223,7 +224,7 @@ const SchoolAutocomplete = ({
       </div>
 
       {!value && open && (
-        <div className="absolute bg-white border w-full mt-1 z-50 rounded-md overflow-hidden shadow-sm">
+        <div className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border bg-card shadow-md">
           {schools.map((s) => (
             <button
               key={String(s.id)}
@@ -233,9 +234,12 @@ const SchoolAutocomplete = ({
                 setOpen(false);
                 setQuery("");
               }}
-              className="block w-full text-left p-2 hover:bg-gray-100"
+              className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs text-foreground transition-colors hover:bg-primary/5"
             >
-              {s.name}
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">
+                🎓
+              </span>
+              <span className="truncate font-normal">{s.name}</span>
             </button>
           ))}
 
@@ -247,9 +251,14 @@ const SchoolAutocomplete = ({
                 setOpen(false);
                 setQuery("");
               }}
-              className="block w-full text-left p-2 border-t bg-muted/40 hover:bg-muted"
+              className="flex w-full items-center gap-2 border-t bg-emerald-50/70 px-2.5 py-1.5 text-left text-xs text-emerald-700 transition-colors hover:bg-emerald-100"
             >
-              직접 입력한 학교 사용: {trimmedQuery}
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[10px] text-emerald-700">
+                ✎
+              </span>
+              <span className="truncate font-normal">
+                직접 입력한 학교 사용: {trimmedQuery}
+              </span>
             </button>
           )}
         </div>
@@ -275,6 +284,7 @@ const TopicDropdown = ({
         setOpen(false);
       }
     };
+
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
@@ -284,7 +294,7 @@ const TopicDropdown = ({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border bg-card text-xs font-medium text-foreground hover:bg-muted"
+        className="inline-flex items-center gap-1 rounded-md border bg-card px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted"
       >
         {value || "주제 선택 *"}
         <ChevronDown
@@ -293,7 +303,7 @@ const TopicDropdown = ({
       </button>
 
       {open && (
-        <div className="absolute z-50 top-full left-0 mt-1 bg-card border rounded-md shadow-md min-w-[120px] py-1">
+        <div className="absolute left-0 top-full z-50 mt-1 min-w-[120px] rounded-md border bg-card py-1 shadow-md">
           {topicOptions.map((t) => (
             <button
               key={t}
@@ -302,8 +312,8 @@ const TopicDropdown = ({
                 onChange(t);
                 setOpen(false);
               }}
-              className={`w-full text-left px-2.5 py-1.5 text-xs hover:bg-muted ${
-                value === t ? "text-primary font-medium" : "text-foreground"
+              className={`w-full px-2.5 py-1.5 text-left text-xs hover:bg-muted ${
+                value === t ? "font-medium text-primary" : "text-foreground"
               }`}
             >
               {t}
@@ -736,11 +746,15 @@ const CommunityWritePage = () => {
           )}
 
           <div className="space-y-3 pb-6 border-b">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              학교 (선택)
-            </label>
-            <SchoolAutocomplete value={school} onChange={setSchool} />
-          </div>
+  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+    학교 (선택)
+    <span className="ml-1 font-normal normal-case text-muted-foreground/70">
+      (ISEP 포함)
+    </span>
+  </label>
+
+  <SchoolAutocomplete value={school} onChange={setSchool} />
+</div>
 
           <Input
             placeholder="제목을 입력하세요 *"
