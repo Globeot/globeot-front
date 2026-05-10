@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -84,8 +84,9 @@ const levelToLabel = (level?: string | null) => {
 
 const POSTS_PER_PAGE = 5;
 const ENTRIES_PER_PAGE = 5;
+const ISEP_SCHOOL_ID = "26";
 
-export default function SchoolDetailPage() {
+function SchoolDetailPageContent() {
   const params = useParams<{ schoolId: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -100,35 +101,68 @@ export default function SchoolDetailPage() {
   const [entryPage, setEntryPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 
+  const isIsepPage = schoolId === ISEP_SCHOOL_ID;
+
+  const handleGoBack = () => {
+    router.push(fromPage ? `/dispatch-db?page=${fromPage}` : "/dispatch-db");
+  };
+
   useEffect(() => {
     if (!schoolId) return;
 
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [detailRes, historyRes, articleRes] = await Promise.all([
+
+        if (isIsepPage) {
+          const historyRes = await api.get(`/schools/${schoolId}/history`);
+          const historyData = historyRes.data?.result || historyRes.data || [];
+
+          setSchool(null);
+          setEntries(historyData);
+          setPosts([]);
+          setIsBookmarked(false);
+          return;
+        }
+
+        const [detailRes, historyRes] = await Promise.all([
           api.get(`/schools/${schoolId}`),
           api.get(`/schools/${schoolId}/history`),
-          api.get(`/schools/${schoolId}/articles`),
         ]);
 
-        setSchool(detailRes.data.result || detailRes.data);
-        setEntries(historyRes.data.result || historyRes.data || []);
-        setPosts(articleRes.data.result || articleRes.data || []);
+        const schoolData = detailRes.data?.result || detailRes.data;
+        const historyData = historyRes.data?.result || historyRes.data || [];
 
-        const schoolData = detailRes.data.result || detailRes.data;
+        setSchool(schoolData);
+        setEntries(historyData);
         setIsBookmarked(schoolData?.isFavorite || false);
-      } catch (err) {
-        console.error("상세 정보 로딩 실패:", err);
+
+        try {
+          const articleRes = await api.get(`/schools/${schoolId}/articles`);
+          setPosts(articleRes.data?.result || articleRes.data || []);
+        } catch {
+          setPosts([]);
+        }
+      } catch {
+        if (!isIsepPage) {
+          setSchool(null);
+        }
+
+        setEntries([]);
+        setPosts([]);
       } finally {
         setIsLoading(false);
+        setPostPage(1);
+        setEntryPage(1);
       }
     };
 
     fetchData();
-  }, [schoolId]);
+  }, [schoolId, isIsepPage]);
 
   const toggleFavorite = async () => {
+    if (!school) return;
+
     try {
       if (isBookmarked) {
         await api.delete(`/schools/${schoolId}/favorite`);
@@ -137,20 +171,20 @@ export default function SchoolDetailPage() {
         await api.post(`/schools/${schoolId}/favorite`);
         setIsBookmarked(true);
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // 무음 실패 처리
     }
   };
 
   if (isLoading) return <div className="py-20 text-center">로딩 중...</div>;
 
-  if (!school) {
+  if (!isIsepPage && !school) {
     return (
       <div className="py-10 text-center">
         <p className="text-muted-foreground mb-4">
           학교 정보를 찾을 수 없습니다.
         </p>
-        <Button variant="outline" onClick={() => router.push("/dispatch-db")}>
+        <Button variant="outline" onClick={handleGoBack}>
           파견 DB로 돌아가기
         </Button>
       </div>
@@ -182,6 +216,131 @@ export default function SchoolDetailPage() {
     ? Math.min(...safeEntries.map((e) => e.score))
     : null;
 
+  if (isIsepPage) {
+    return (
+      <div className="py-10">
+        <div className="container-tight">
+          <button
+            onClick={handleGoBack}
+            className="flex items-center gap-1 text-sm text-muted-foreground mb-4"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            학교별 DB로
+          </button>
+
+          <div className="mb-8">
+            <div className="mb-4 flex items-center gap-2">
+              <GraduationCap className="h-7 w-7 text-primary" />
+              <h1 className="text-4xl font-bold">ISEP</h1>
+            </div>
+
+            <a
+              href="https://www.isepstudyabroad.org/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-primary hover:underline"
+            >
+              ISEP 공식 사이트
+              <ExternalLink className="h-4 w-4" />
+            </a>
+
+            <p className="mt-8 text-muted-foreground">
+              ISEP은 학교 지정 없이 카테고리로 선발되며, 배정 후 학교가
+              결정됩니다.
+            </p>
+          </div>
+
+          <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="card-elevated p-6 text-center">
+              <TrendingUp className="mx-auto mb-2 h-5 w-5 text-primary" />
+              <p className="text-sm text-muted-foreground">평균 환산 점수</p>
+              <p className="text-2xl font-bold">{avgScore ?? "-"}</p>
+            </div>
+
+            <div className="card-elevated p-6 text-center">
+              <BarChart3 className="mx-auto mb-2 h-5 w-5 text-primary" />
+              <p className="text-sm text-muted-foreground">최고 환산 점수</p>
+              <p className="text-2xl font-bold">{maxScore ?? "-"}</p>
+            </div>
+
+            <div className="card-elevated p-6 text-center">
+              <BarChart3 className="mx-auto mb-2 h-5 w-5 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">최저 환산 점수</p>
+              <p className="text-2xl font-bold">{minScore ?? "-"}</p>
+            </div>
+          </div>
+
+          <h2 className="font-bold mb-3">📊 과거 합격 점수 이력</h2>
+
+          <div className="card-elevated mb-8">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>학기</TableHead>
+                  <TableHead className="text-right">환산 점수</TableHead>
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
+                {safeEntries.length > 0 ? (
+                  pagedEntries.map((e, idx) => (
+                    <TableRow key={`${e.semester}-${idx}`}>
+                      <TableCell>{e.semester}</TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {e.score}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={2}
+                      className="text-center text-muted-foreground py-6"
+                    >
+                      과거 배정 데이터가 없습니다.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {safeEntries.length > 0 && totalEntryPages > 1 && (
+            <div className="mb-8 flex items-center justify-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={entryPage <= 1}
+                onClick={() => setEntryPage((prev) => Math.max(prev - 1, 1))}
+                className="flex h-10 w-10 items-center justify-center rounded-xl p-0"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+
+              <span className="flex min-w-[52px] items-center justify-center text-base font-medium text-muted-foreground">
+                {entryPage} / {totalEntryPages}
+              </span>
+
+              <Button
+                type="button"
+                variant="outline"
+                disabled={entryPage >= totalEntryPages}
+                onClick={() =>
+                  setEntryPage((prev) => Math.min(prev + 1, totalEntryPages))
+                }
+                className="flex h-10 w-10 items-center justify-center rounded-xl p-0"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const currentSchool = school as SchoolInfo;
+
   const safePosts = Array.isArray(posts) ? posts : [];
   const totalPostPages = Math.max(
     1,
@@ -193,12 +352,12 @@ export default function SchoolDetailPage() {
   );
 
   const livingCostLabel =
-    school.monthlyCostLevel === "HIGH"
+    currentSchool.monthlyCostLevel === "HIGH"
       ? "최상"
-      : school.monthlyCostLevel === "MEDIUM"
+      : currentSchool.monthlyCostLevel === "MEDIUM"
         ? "상"
         : "중";
-  const travelAccessLabel = levelToLabel(school.travelAccessLevel);
+  const travelAccessLabel = levelToLabel(currentSchool.travelAccessLevel);
 
   const livingCostColor =
     livingCostLabel === "최상"
@@ -213,11 +372,7 @@ export default function SchoolDetailPage() {
     <div className="py-10">
       <div className="container-tight">
         <button
-          onClick={() =>
-            router.push(
-              fromPage ? `/dispatch-db?page=${fromPage}` : "/dispatch-db",
-            )
-          }
+          onClick={handleGoBack}
           className="flex items-center gap-1 text-sm text-muted-foreground mb-4"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -227,8 +382,8 @@ export default function SchoolDetailPage() {
         <div className="mb-8">
           <div className="flex justify-center">
             <img
-              src={school.imgUrl}
-              alt={school.name}
+              src={currentSchool.imgUrl}
+              alt={currentSchool.name}
               className="max-h-[420px] w-auto max-w-full rounded-3xl object-contain shadow-md"
             />
           </div>
@@ -242,12 +397,12 @@ export default function SchoolDetailPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <GraduationCap className="h-6 w-6 text-primary" />
-              <h1 className="text-3xl font-bold">{school.name}</h1>
+              <h1 className="text-3xl font-bold">{currentSchool.name}</h1>
             </div>
 
             <div className="flex items-center text-sm text-muted-foreground gap-1">
               <MapPin className="h-4 w-4" />
-              {school.city}, {school.country}
+              {currentSchool.city}, {currentSchool.country}
             </div>
           </div>
 
@@ -268,8 +423,8 @@ export default function SchoolDetailPage() {
             <p className="text-xs text-muted-foreground">유명한 전공</p>
 
             <div className="flex flex-wrap gap-1 mt-1">
-              {Array.isArray(school.popularMajors) &&
-                school.popularMajors.map((m) => (
+              {Array.isArray(currentSchool.popularMajors) &&
+                currentSchool.popularMajors.map((m) => (
                   <span
                     key={m}
                     className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-full"
@@ -304,7 +459,7 @@ export default function SchoolDetailPage() {
             </div>
 
             <p className="text-xs text-muted-foreground mt-0.5">
-              {school.travelAccess}
+              {currentSchool.travelAccess}
             </p>
           </div>
 
@@ -321,21 +476,23 @@ export default function SchoolDetailPage() {
               </span>
             </div>
 
-            <p className="text-sm font-semibold">{school.monthlyCost}</p>
+            <p className="text-sm font-semibold">{currentSchool.monthlyCost}</p>
           </div>
 
           <div className="card-elevated p-4">
             <Users className="h-4 w-4 text-primary mb-1" />
             <p className="text-xs text-muted-foreground">국제학생 비율</p>
             <p className="text-sm font-semibold">
-              {school.internationalStudentRatio}%
+              {currentSchool.internationalStudentRatio}%
             </p>
           </div>
 
           <div className="card-elevated p-4">
             <Heart className="h-4 w-4 text-primary mb-1" />
             <p className="text-xs text-muted-foreground">버디 프로그램</p>
-            <p className="text-sm font-semibold">{school.buddyProgram}</p>
+            <p className="text-sm font-semibold">
+              {currentSchool.buddyProgram}
+            </p>
           </div>
 
           <div className="card-elevated p-4">
@@ -345,7 +502,7 @@ export default function SchoolDetailPage() {
             </p>
 
             <a
-              href={school.officialSite}
+              href={currentSchool.officialSite}
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm font-semibold text-primary hover:underline"
@@ -509,5 +666,19 @@ export default function SchoolDetailPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function SchoolDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="py-20 text-center text-muted-foreground">
+          로딩 중...
+        </div>
+      }
+    >
+      <SchoolDetailPageContent />
+    </Suspense>
   );
 }
