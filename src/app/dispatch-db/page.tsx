@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
@@ -21,7 +21,7 @@ interface DispatchEntry {
   city: string;
   schoolName: string;
   avgScore: number | null;
-  travelAccessLevel: "HIGH" | "MEDIUM" | "LOW";
+  travelAccessLevel: "HIGHEST" | "HIGH" | "MEDIUM" | "LOW" | null;
   monthlyCost: string;
   officialSite: string;
 }
@@ -38,13 +38,36 @@ const scoreRanges = [
   { label: "점수 없음", min: null, max: null },
 ];
 
-export default function DispatchDBPage() {
+function DispatchDBPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [schoolSearch, setSchoolSearch] = useState("");
   const [scoreRange, setScoreRange] = useState(scoreRanges[0]);
   const [schools, setSchools] = useState<DispatchEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoginRequired, setIsLoginRequired] = useState(false);
+  const [currentPage, setCurrentPage] = useState(() => {
+    const page = Number(searchParams.get("page") || "1");
+    return Number.isNaN(page) || page < 1 ? 1 : page;
+  });
+
+  const ITEMS_PER_PAGE = 10;
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (currentPage <= 1) {
+      params.delete("page");
+    } else {
+      params.set("page", String(currentPage));
+    }
+
+    const query = params.toString();
+    router.replace(query ? `/dispatch-db?${query}` : "/dispatch-db", {
+      scroll: false,
+    });
+  }, [currentPage]);
 
   // 학교 목록 불러오기
   useEffect(() => {
@@ -61,9 +84,20 @@ export default function DispatchDBPage() {
         if (scoreRange.max !== null) params.maxScore = scoreRange.max;
 
         const res = await api.get("/schools", { params });
+
         setSchools(res.data.result || []);
-      } catch (err) {
-        console.error("학교 목록 로딩 실패:", err);
+        setIsLoginRequired(false);
+      } catch (err: any) {
+        const status = err?.response?.status;
+
+        if (status === 401 || status === 403) {
+          setIsLoginRequired(true);
+          setSchools([]);
+          return;
+        }
+
+        console.warn("학교 목록 로딩 실패:", status);
+        setIsLoginRequired(false);
         setSchools([]);
       } finally {
         setIsLoading(false);
@@ -73,18 +107,42 @@ export default function DispatchDBPage() {
     fetchSchools();
   }, [schoolSearch, scoreRange]);
 
-  const getTravelAccessUI = (level: string) => {
+  const getTravelAccessUI = (level?: string | null) => {
     switch (level) {
+      case "HIGHEST":
+        return {
+          label: "최상",
+          class: "bg-blue-100 text-blue-700",
+        };
       case "HIGH":
-        return { label: "상", class: "bg-green-100 text-green-700" };
+        return {
+          label: "상",
+          class: "bg-green-100 text-green-700",
+        };
       case "MEDIUM":
-        return { label: "중", class: "bg-yellow-100 text-yellow-700" };
+        return {
+          label: "중",
+          class: "bg-yellow-100 text-yellow-700",
+        };
       case "LOW":
-        return { label: "하", class: "bg-gray-100 text-gray-700" };
+        return {
+          label: "하",
+          class: "bg-gray-100 text-gray-700",
+        };
       default:
-        return { label: "-", class: "bg-muted text-muted-foreground" };
+        return {
+          label: "-",
+          class: "bg-muted text-muted-foreground",
+        };
     }
   };
+
+  const totalPages = Math.max(1, Math.ceil(schools.length / ITEMS_PER_PAGE));
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedSchools = schools.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE,
+  );
 
   return (
     <div className="py-6 sm:py-10">
@@ -104,7 +162,10 @@ export default function DispatchDBPage() {
             <Input
               placeholder="학교명, 국가, 도시 검색..."
               value={schoolSearch}
-              onChange={(e) => setSchoolSearch(e.target.value)}
+              onChange={(e) => {
+                setSchoolSearch(e.target.value);
+                setCurrentPage(1);
+              }}
               className="pl-9"
             />
           </div>
@@ -116,7 +177,10 @@ export default function DispatchDBPage() {
             {scoreRanges.map((range) => (
               <button
                 key={range.label}
-                onClick={() => setScoreRange(range)}
+                onClick={() => {
+                  setScoreRange(range);
+                  setCurrentPage(1);
+                }}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                   scoreRange.label === range.label
                     ? "bg-primary text-primary-foreground"
@@ -152,6 +216,25 @@ export default function DispatchDBPage() {
                     로딩 중...{" "}
                   </TableCell>
                 </TableRow>
+              ) : isLoginRequired ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-12">
+                    <div className="flex flex-col items-center gap-4">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">
+                          로그인한 사용자만 볼 수 있습니다.
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          학교별 DB를 확인하려면 먼저 로그인해주세요.
+                        </p>
+                      </div>
+
+                      <Button onClick={() => router.push("/login")}>
+                        로그인하러 가기
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
               ) : !Array.isArray(schools) || schools.length === 0 ? (
                 <TableRow>
                   <TableCell
@@ -162,7 +245,7 @@ export default function DispatchDBPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                schools.map((entry) => {
+                paginatedSchools.map((entry) => {
                   const accessUI = getTravelAccessUI(entry.travelAccessLevel);
                   return (
                     <TableRow key={entry.schoolId}>
@@ -185,14 +268,15 @@ export default function DispatchDBPage() {
                       <TableCell>
                         <button
                           onClick={() =>
-                            router.push(`/dispatch-db/${entry.schoolId}`)
+                            router.push(
+                              `/dispatch-db/${entry.schoolId}?fromPage=${currentPage}`,
+                            )
                           }
                           className="text-sm font-medium text-primary hover:underline text-left"
                         >
                           {entry.schoolName}
                         </button>
                       </TableCell>
-                      {/* 💡 소수점 둘째 자리까지만 표시되도록 수정한 부분 */}
                       <TableCell className="font-semibold">
                         {entry.avgScore !== null
                           ? entry.avgScore.toFixed(2)
@@ -232,10 +316,73 @@ export default function DispatchDBPage() {
           </Table>
         </div>
 
+        {!isLoading &&
+          !isLoginRequired &&
+          schools.length > 0 &&
+          totalPages > 1 && (
+            <div className="mt-5 flex items-center justify-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="gap-1"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                이전
+              </Button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`h-8 min-w-8 rounded-md px-2 text-sm font-medium transition-colors ${
+                        currentPage === page
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ),
+                )}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="gap-1"
+              >
+                다음
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
         <p className="text-xs text-muted-foreground text-center mt-4">
           ※ 본 데이터는 참고용이며, 최종 정보는 학내 공식 사이트를 확인해주세요.
         </p>
       </div>
     </div>
+  );
+}
+
+export default function DispatchDBPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="py-20 text-center text-muted-foreground">
+          로딩 중...
+        </div>
+      }
+    >
+      <DispatchDBPageContent />
+    </Suspense>
   );
 }

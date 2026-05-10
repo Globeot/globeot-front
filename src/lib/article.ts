@@ -1,7 +1,11 @@
 import api from "./api";
 
 export type ArticleType = "QUESTION" | "INFO" | "TRADE" | "COMPANION";
-export type ExchangeStatus = "APPLYING" | "PRE_DEPARTURE" | "ABROAD" | "RETURNED";
+export type ExchangeStatus =
+  | "APPLYING"
+  | "PRE_DEPARTURE"
+  | "ABROAD"
+  | "RETURNED";
 export type RegionType = "EUROPE" | "AMERICA" | "ASIA" | "OCEANIA" | "ETC";
 
 export type ArticleItem = {
@@ -136,7 +140,9 @@ export const getArticleDetail = async (articleId: string | number) => {
 };
 
 export const getArticleComments = async (articleId: string | number) => {
-  const res = await api.get<CommentListResponse>(`/articles/${articleId}/comments`);
+  const res = await api.get<CommentListResponse>(
+    `/articles/${articleId}/comments`,
+  );
   return res.data;
 };
 
@@ -147,7 +153,7 @@ export const createArticle = async (body: CreateArticleRequest) => {
 
 export const createArticleComment = async (
   articleId: string | number,
-  body: CreateCommentRequest
+  body: CreateCommentRequest,
 ) => {
   const res = await api.post(`/articles/${articleId}/comments`, body);
   return res.data;
@@ -164,7 +170,7 @@ export const unscrapArticle = async (articleId: string | number) => {
 };
 export const updateArticle = async (
   articleId: string | number,
-  body: UpdateArticleRequest
+  body: UpdateArticleRequest,
 ) => {
   const res = await api.patch(`/articles/${articleId}`, body);
   return res.data;
@@ -193,9 +199,6 @@ export const uploadImage = async (file: string) => {
     });
     return res.data;
   } catch (error: any) {
-    console.log("uploadImage 실패 상태:", error?.response?.status);
-    console.log("uploadImage 실패 응답:", error?.response?.data);
-    console.log("uploadImage payload 길이:", file?.length);
     return null;
   }
 };

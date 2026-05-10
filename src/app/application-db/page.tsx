@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trophy, Upload, ImageIcon, X } from "lucide-react";
 import { Input } from "../../components/ui/input";
@@ -10,6 +10,11 @@ import { Label } from "../../components/ui/label";
 import { gpaToPercentile } from "./gpaData";
 import { ImageUploadButton } from "../../components/tiptap-ui/image-upload-button";
 import api from "../../lib/api";
+
+type SchoolSearchItem = {
+  id: number;
+  name: string;
+};
 
 const SchoolAutocomplete = ({
   rank,
@@ -26,22 +31,56 @@ const SchoolAutocomplete = ({
 }) => {
   const [query, setQuery] = useState(value);
   const [open, setOpen] = useState(false);
+  const [suggestions, setSuggestions] = useState<SchoolSearchItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const available = allSchools.filter((s) => !exclude.includes(s));
-  const suggestions = query
-    ? available.filter((s) => s.toLowerCase().includes(query.toLowerCase()))
-    : available;
+  useEffect(() => {
+    setQuery(value);
+  }, [value]);
 
-  const select = (s: string) => {
-    setQuery(s);
-    onChange(s);
+  useEffect(() => {
+    if (!open) return;
+
+    const fetchSchools = async () => {
+      try {
+        setIsSearching(true);
+
+        const res = await api.get("/schools/search", {
+          params: {
+            keyword: query || "",
+          },
+        });
+
+        const result = Array.isArray(res.data?.result) ? res.data.result : [];
+
+        setSuggestions(
+          result.filter(
+            (school: SchoolSearchItem) => !exclude.includes(school.name),
+          ),
+        );
+      } catch (err: any) {
+        console.warn("희망학교 검색 실패:", err?.response?.status);
+        setSuggestions([]);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const timer = setTimeout(fetchSchools, 300);
+    return () => clearTimeout(timer);
+  }, [query, open, exclude]);
+
+  const select = (schoolName: string) => {
+    setQuery(schoolName);
+    onChange(schoolName);
     setOpen(false);
   };
 
   const clear = () => {
     setQuery("");
     onChange("");
+    setSuggestions([]);
   };
 
   return (
@@ -49,6 +88,7 @@ const SchoolAutocomplete = ({
       <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap shrink-0 w-14">
         {rank}순위{required ? " *" : ""}
       </span>
+
       <div className="relative flex-1" ref={ref}>
         <Input
           placeholder="학교 검색..."
@@ -61,33 +101,38 @@ const SchoolAutocomplete = ({
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
         />
+
         {value && (
           <button
+            type="button"
             onClick={clear}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         )}
+
         {open && (
           <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border rounded-lg shadow-md max-h-[180px] overflow-y-auto py-1">
-            {suggestions.length > 0 ? (
-              suggestions.map((s) => (
+            {isSearching ? (
+              <div className="px-3 py-2 text-sm text-muted-foreground">
+                검색 중...
+              </div>
+            ) : suggestions.length > 0 ? (
+              suggestions.map((school, index) => (
                 <button
-                  key={s}
-                  onMouseDown={() => select(s)}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                  type="button"
+                  key={`${school.id}-${index}`}
+                  onMouseDown={() => select(school.name)}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-muted cursor-pointer"
                 >
-                  {s}
+                  {school.name}
                 </button>
               ))
             ) : (
-              <button
-                onMouseDown={() => select(query)}
-                className="w-full text-left px-3 py-2 text-sm text-primary hover:bg-muted"
-              >
-                ➕ "{query}" 추가하기
-              </button>
+              <div className="px-3 py-2 text-sm text-muted-foreground">
+                검색 결과가 없습니다.
+              </div>
             )}
           </div>
         )}
@@ -97,19 +142,6 @@ const SchoolAutocomplete = ({
 };
 
 type ExamType = "toefl" | "ielts";
-
-const allSchools = [
-  "뮌헨대학교",
-  "소르본대학교",
-  "UCLA",
-  "바르셀로나대학교",
-  "도쿄대학교",
-  "UCL",
-  "베를린자유대학교",
-  "하이델베르크대학교",
-  "옥스퍼드대학교",
-  "케임브리지대학교",
-];
 
 const semesterOptions = ["2027-2", "2027-1"] as const;
 
@@ -135,6 +167,8 @@ const ApplicationDBPage = () => {
     "",
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [isLoginRequired, setIsLoginRequired] = useState(false);
 
   const ieltsToToefl: Record<number, number> = {
     9: 30,
@@ -148,6 +182,14 @@ const ApplicationDBPage = () => {
     5: 8,
     4.5: 4,
     4: 0,
+    3.5: 0,
+    3: 0,
+    2.5: 0,
+    2: 0,
+    1.5: 0,
+    1: 0,
+    0.5: 0,
+    0: 0,
   };
 
   const calculate = () => {
@@ -191,7 +233,26 @@ const ApplicationDBPage = () => {
     schoolChoices[0] &&
     calcResult !== null &&
     !isSubmitting;
+  useEffect(() => {
+    const checkLogin = async () => {
+      try {
+        await api.get("/users/me");
+        setIsLoginRequired(false);
+      } catch (err: any) {
+        const status = err?.response?.status;
 
+        if (status === 401 || status === 403) {
+          setIsLoginRequired(true);
+        } else {
+          setIsLoginRequired(false);
+        }
+      } finally {
+        setIsAuthChecking(false);
+      }
+    };
+
+    checkLogin();
+  }, []);
   /* ─── 지원서 제출 로직 ─── */
   const handleTranscriptSubmit = async () => {
     if (!canSubmitTranscript) return;
@@ -230,7 +291,7 @@ const ApplicationDBPage = () => {
         router.push("/application-db/pending");
       }
     } catch (err: any) {
-      console.error("상세 에러:", err);
+      console.warn("지원서 제출 실패:", err?.response?.status);
       alert(err.response?.data?.message || "제출 실패");
     } finally {
       setIsSubmitting(false);
@@ -242,6 +303,42 @@ const ApplicationDBPage = () => {
     next[index] = value;
     setSchoolChoices(next);
   };
+
+  if (isAuthChecking) {
+    return (
+      <main className="min-h-screen bg-background">
+        <div className="mx-auto max-w-5xl px-6 py-20 text-center text-muted-foreground">
+          로그인 상태를 확인하는 중...
+        </div>
+      </main>
+    );
+  }
+
+  if (isLoginRequired) {
+    return (
+      <main className="min-h-screen bg-background">
+        <div className="mx-auto flex min-h-[70vh] max-w-5xl items-center justify-center px-6 py-20">
+          <div className="w-full max-w-md rounded-2xl border bg-card p-8 text-center shadow-sm">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <Trophy className="h-6 w-6 text-primary" />
+            </div>
+
+            <h2 className="text-lg font-bold text-foreground">
+              로그인한 사용자만 환산 점수 계산기를 사용할 수 있습니다.
+            </h2>
+
+            <p className="mt-2 text-sm text-muted-foreground">
+              지원 랭킹과 환산 점수를 확인하려면 먼저 로그인해주세요.
+            </p>
+
+            <Button className="mt-5" onClick={() => router.push("/login")}>
+              로그인하러 가기
+            </Button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <div className="py-6 sm:py-10">

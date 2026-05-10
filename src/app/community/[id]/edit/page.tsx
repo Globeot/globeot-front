@@ -97,13 +97,13 @@ const stageBadgeMap: Record<StageFilter, string> = {
 
 const topicIconMap: Record<TopicFilter, React.ReactNode> = {
   "행정·비자": <FileText className="h-3 w-3" />,
-  "주거": <Home className="h-3 w-3" />,
-  "재정": <Wallet className="h-3 w-3" />,
-  "통신": <Wifi className="h-3 w-3" />,
+  주거: <Home className="h-3 w-3" />,
+  재정: <Wallet className="h-3 w-3" />,
+  통신: <Wifi className="h-3 w-3" />,
   "보험·의료": <ShieldCheck className="h-3 w-3" />,
-  "학업": <GraduationCap className="h-3 w-3" />,
+  학업: <GraduationCap className="h-3 w-3" />,
   "생활·적응": <Compass className="h-3 w-3" />,
-  "기타": <MoreHorizontal className="h-3 w-3" />,
+  기타: <MoreHorizontal className="h-3 w-3" />,
 };
 
 const MenuBar = ({ editor }: { editor: any }) => {
@@ -199,7 +199,9 @@ function mapStageFromApi(value?: string): StageFilter {
   }
 }
 
-function mapTypeFromApi(value?: string): "question" | "trade" | "companion" | "info" {
+function mapTypeFromApi(
+  value?: string,
+): "question" | "trade" | "companion" | "info" {
   switch (value) {
     case "QUESTION":
       return "question";
@@ -255,13 +257,13 @@ function mapRegionFromApi(value?: string): string {
 function mapTopicToApi(value: string): string {
   const map: Record<string, string> = {
     "행정·비자": "VISA",
-    "주거": "HOUSING",
-    "재정": "FINANCE",
-    "통신": "COMMUNICATION",
+    주거: "HOUSING",
+    재정: "FINANCE",
+    통신: "COMMUNICATION",
     "보험·의료": "MEDICAL",
-    "학업": "STUDY",
+    학업: "STUDY",
     "생활·적응": "LIFE",
-    "기타": "ETC",
+    기타: "ETC",
   };
   return map[value] ?? "ETC";
 }
@@ -304,7 +306,9 @@ export default function CommunityEditPage() {
   const [title, setTitle] = useState("");
   const [stage, setStage] = useState<StageFilter>("pre_assign");
   const [region, setRegion] = useState("");
-  const [type, setType] = useState<"question" | "trade" | "companion" | "info">("question");
+  const [type, setType] = useState<"question" | "trade" | "companion" | "info">(
+    "question",
+  );
   const [topic, setTopic] = useState<TopicFilter | "">("");
   const [author, setAuthor] = useState("");
   const [date, setDate] = useState("");
@@ -330,7 +334,11 @@ export default function CommunityEditPage() {
       },
     },
     onUpdate: ({ editor }) => {
-      const pureText = editor.getText().replace(/\n/g, "").replace(/\s+/g, "").trim();
+      const pureText = editor
+        .getText()
+        .replace(/\n/g, "")
+        .replace(/\s+/g, "")
+        .trim();
       setContentLength(pureText.length);
     },
   });
@@ -356,7 +364,10 @@ export default function CommunityEditPage() {
 
         editor.commands.setContent(article.content ?? "");
 
-        const plain = (article.content ?? "").replace(/<[^>]*>/g, "").replace(/\s+/g, "").trim();
+        const plain = (article.content ?? "")
+          .replace(/<[^>]*>/g, "")
+          .replace(/\s+/g, "")
+          .trim();
         setContentLength(plain.length);
       } catch (error) {
         console.error("게시글 수정용 데이터 조회 실패:", error);
@@ -384,7 +395,10 @@ export default function CommunityEditPage() {
     isContentValid &&
     !submitting;
 
-  const previewHtml = useMemo(() => editor?.getHTML() ?? "", [editor, contentLength]);
+  const previewHtml = useMemo(
+    () => editor?.getHTML() ?? "",
+    [editor, contentLength],
+  );
 
   const handleSubmit = async () => {
     if (!id || !editor || !canSubmit) return;
@@ -400,8 +414,6 @@ export default function CommunityEditPage() {
         exchangeStatus: mapStageToApi(stage),
         topic: isQuestionOrInfo && topic ? mapTopicToApi(topic) : "ETC",
       };
-
-      console.log("게시글 수정 요청 body:", requestBody);
 
       await updateArticle(String(id), requestBody);
 
@@ -438,13 +450,13 @@ export default function CommunityEditPage() {
 
         <article
           className={`card-elevated p-5 sm:p-6 ${
-            isQuestionOrInfo ? "border-l-[3px] border-l-primary/50 bg-primary/[0.03]" : ""
+            isQuestionOrInfo
+              ? "border-l-[3px] border-l-primary/50 bg-primary/[0.03]"
+              : ""
           }`}
         >
           <div className="flex items-center gap-2 mb-3.5 flex-wrap">
-            <span className={stageBadgeMap[stage]}>
-              {stageLabelMap[stage]}
-            </span>
+            <span className={stageBadgeMap[stage]}>{stageLabelMap[stage]}</span>
             <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
               {typeLabel[type]}
             </span>
@@ -516,7 +528,9 @@ export default function CommunityEditPage() {
                     key={t.value}
                     type="button"
                     onClick={() => {
-                      setType(t.value as "question" | "trade" | "companion" | "info");
+                      setType(
+                        t.value as "question" | "trade" | "companion" | "info",
+                      );
                       if (t.value !== "info" && t.value !== "question") {
                         setTopic("");
                       }

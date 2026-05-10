@@ -68,7 +68,6 @@ const LoginPage = () => {
       });
 
       const data = await res.json();
-      console.log("로그인 응답 데이터:", data); // 디버깅을 위해 콘솔에 찍어봅니다.
 
       if (!res.ok) {
         alert(data.message || "로그인 실패");
@@ -83,11 +82,10 @@ const LoginPage = () => {
         data?.result?.accessToken;
 
       if (token) {
-        localStorage.setItem("accessToken", token); // 저장은 기존대로 'accessToken'이라는 이름으로 해도 무방합니다.
+        localStorage.setItem("accessToken", token);
         alert("로그인 성공!");
-        window.location.href = "/"; // 메인 페이지로 이동
+        window.location.href = "/";
       } else {
-        // 만약 또 안된다면 데이터 구조가 다를 수 있으니 알림을 띄웁니다.
         alert(
           "서버 응답에 토큰(token)이 포함되어 있지 않습니다. 콘솔을 확인하세요.",
         );
@@ -248,7 +246,7 @@ const LoginPage = () => {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {mode === "login"
-              ? "EwhaAbroad에 오신 것을 환영합니다"
+              ? "글로벗에 오신 것을 환영합니다"
               : signupStep === 1
                 ? "학교 이메일로 인증해 주세요"
                 : signupStep === 2
@@ -304,12 +302,6 @@ const LoginPage = () => {
                 로그인
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-              <p className="text-center text-xs text-muted-foreground">
-                비밀번호를 잊으셨나요?{" "}
-                <button className="text-primary hover:underline font-medium">
-                  비밀번호 재설정
-                </button>
-              </p>
             </div>
           ) : signupStep === 1 ? (
             <div className="space-y-4">
@@ -386,10 +378,14 @@ const LoginPage = () => {
                     type="button"
                     variant="outline"
                     onClick={handleCheckNickname}
-                    disabled={isCheckingNickname}
-                    className="shrink-0"
+                    disabled={isCheckingNickname || isNicknameChecked}
+                    className="shrink-0 disabled:cursor-not-allowed"
                   >
-                    {isCheckingNickname ? "확인 중..." : "중복확인"}
+                    {isCheckingNickname
+                      ? "확인 중..."
+                      : isNicknameChecked
+                        ? "확인 완료"
+                        : "중복확인"}
                   </Button>
                 </div>
               </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -51,9 +51,9 @@ interface SchoolInfo {
   country: string;
   popularMajors: string[];
   travelAccess: string;
-  travelAccessLevel: "HIGH" | "MEDIUM" | "LOW";
+  travelAccessLevel: "HIGHEST" | "HIGH" | "MEDIUM" | "LOW" | null;
   monthlyCost: string;
-  monthlyCostLevel: "HIGH" | "MEDIUM" | "LOW";
+  monthlyCostLevel: "HIGHEST" | "HIGH" | "MEDIUM" | "LOW" | null;
   internationalStudentRatio: number;
   buddyProgram: string;
   officialSite: string;
@@ -74,25 +74,30 @@ const stageBadgeMap: Record<string, string> = {
   RETURNED: "status-badge-returned",
 };
 
-const levelToLabel = (level: string) => {
+const levelToLabel = (level?: string | null) => {
+  if (level === "HIGHEST") return "최상";
   if (level === "HIGH") return "상";
   if (level === "MEDIUM") return "중";
   if (level === "LOW") return "하";
-  return "중";
+  return "-";
 };
 
 const POSTS_PER_PAGE = 5;
+const ENTRIES_PER_PAGE = 5;
 
 export default function SchoolDetailPage() {
   const params = useParams<{ schoolId: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const schoolId = params.schoolId;
+  const fromPage = searchParams.get("fromPage");
 
   const [school, setSchool] = useState<SchoolInfo | null>(null);
   const [entries, setEntries] = useState<DispatchEntry[]>([]);
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [postPage, setPostPage] = useState(1);
+  const [entryPage, setEntryPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -154,6 +159,17 @@ export default function SchoolDetailPage() {
 
   const safeEntries = Array.isArray(entries) ? entries : [];
   const hasScore = safeEntries.length > 0;
+
+  const totalEntryPages = Math.max(
+    1,
+    Math.ceil(safeEntries.length / ENTRIES_PER_PAGE),
+  );
+
+  const pagedEntries = safeEntries.slice(
+    (entryPage - 1) * ENTRIES_PER_PAGE,
+    entryPage * ENTRIES_PER_PAGE,
+  );
+
   const avgScore = hasScore
     ? (
         safeEntries.reduce((sum, e) => sum + e.score, 0) / safeEntries.length
@@ -197,23 +213,27 @@ export default function SchoolDetailPage() {
     <div className="py-10">
       <div className="container-tight">
         <button
-          onClick={() => router.push("/dispatch-db")}
+          onClick={() =>
+            router.push(
+              fromPage ? `/dispatch-db?page=${fromPage}` : "/dispatch-db",
+            )
+          }
           className="flex items-center gap-1 text-sm text-muted-foreground mb-4"
         >
           <ArrowLeft className="h-4 w-4" />
           파견 DB로
         </button>
 
-        <div className="mb-6">
-          <div className="rounded-xl overflow-hidden aspect-[2/1]">
+        <div className="mb-8">
+          <div className="flex justify-center">
             <img
               src={school.imgUrl}
               alt={school.name}
-              className="w-full h-full object-cover"
+              className="max-h-[420px] w-auto max-w-full rounded-3xl object-contain shadow-md"
             />
           </div>
 
-          <p className="text-[10px] text-muted-foreground mt-1 text-right">
+          <p className="mx-auto mt-2 max-w-5xl text-right text-[10px] text-muted-foreground">
             *Images from Wikimedia Commons
           </p>
         </div>
@@ -268,9 +288,15 @@ export default function SchoolDetailPage() {
 
               <span
                 className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
-                  travelAccessLabel === "상"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-yellow-100 text-yellow-700"
+                  travelAccessLabel === "최상"
+                    ? "bg-blue-100 text-blue-700"
+                    : travelAccessLabel === "상"
+                      ? "bg-green-100 text-green-700"
+                      : travelAccessLabel === "중"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : travelAccessLabel === "하"
+                          ? "bg-gray-100 text-gray-700"
+                          : "bg-muted text-muted-foreground"
                 }`}
               >
                 {travelAccessLabel}
@@ -362,8 +388,8 @@ export default function SchoolDetailPage() {
 
             <TableBody>
               {safeEntries.length > 0 ? (
-                safeEntries.map((e, idx) => (
-                  <TableRow key={idx}>
+                pagedEntries.map((e, idx) => (
+                  <TableRow key={`${e.semester}-${idx}`}>
                     <TableCell>{e.semester}</TableCell>
                     <TableCell className="text-right font-semibold">
                       {e.score}
@@ -383,6 +409,36 @@ export default function SchoolDetailPage() {
             </TableBody>
           </Table>
         </div>
+
+        {safeEntries.length > 0 && totalEntryPages > 1 && (
+          <div className="mb-8 flex items-center justify-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={entryPage <= 1}
+              onClick={() => setEntryPage((prev) => Math.max(prev - 1, 1))}
+              className="flex h-10 w-10 items-center justify-center rounded-xl p-0"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+
+            <span className="flex min-w-[52px] items-center justify-center text-base font-medium text-muted-foreground">
+              {entryPage} / {totalEntryPages}
+            </span>
+
+            <Button
+              type="button"
+              variant="outline"
+              disabled={entryPage >= totalEntryPages}
+              onClick={() =>
+                setEntryPage((prev) => Math.min(prev + 1, totalEntryPages))
+              }
+              className="flex h-10 w-10 items-center justify-center rounded-xl p-0"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
+        )}
 
         <h2 className="font-bold mb-3">💬 관련 커뮤니티 글</h2>
 
@@ -423,27 +479,31 @@ export default function SchoolDetailPage() {
         </div>
 
         {totalPostPages > 1 && (
-          <div className="flex justify-center gap-2">
+          <div className="mt-5 flex items-center justify-center gap-3">
             <Button
+              type="button"
               variant="outline"
-              size="sm"
               disabled={postPage <= 1}
-              onClick={() => setPostPage(postPage - 1)}
+              onClick={() => setPostPage((prev) => Math.max(prev - 1, 1))}
+              className="flex h-10 w-10 items-center justify-center rounded-xl p-0"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-5 w-5" />
             </Button>
 
-            <span className="text-sm text-muted-foreground">
+            <span className="flex min-w-[52px] items-center justify-center text-base font-medium text-muted-foreground">
               {postPage} / {totalPostPages}
             </span>
 
             <Button
+              type="button"
               variant="outline"
-              size="sm"
               disabled={postPage >= totalPostPages}
-              onClick={() => setPostPage(postPage + 1)}
+              onClick={() =>
+                setPostPage((prev) => Math.min(prev + 1, totalPostPages))
+              }
+              className="flex h-10 w-10 items-center justify-center rounded-xl p-0"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-5 w-5" />
             </Button>
           </div>
         )}

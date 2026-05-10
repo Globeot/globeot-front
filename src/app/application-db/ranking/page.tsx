@@ -56,6 +56,8 @@ export default function RankingPage() {
   const [myInfo, setMyInfo] = useState<MyRankDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [isLoginRequired, setIsLoginRequired] = useState(false);
+
   useEffect(() => {
     const fetchRankings = async () => {
       try {
@@ -72,8 +74,19 @@ export default function RankingPage() {
 
         setMyInfo(myRes.data);
         setRankings(rankRes.data);
-      } catch (err) {
+        setIsLoginRequired(false);
+      } catch (err: any) {
         console.error("랭킹 데이터 로딩 실패:", err);
+
+        const status = err?.response?.status;
+
+        if (status === 401 || status === 403) {
+          setIsLoginRequired(true);
+          setMyInfo(null);
+          setRankings([]);
+        } else {
+          setIsLoginRequired(false);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -202,6 +215,26 @@ export default function RankingPage() {
           {isLoading ? (
             <div className="py-20 text-center text-muted-foreground">
               로딩 중...
+            </div>
+          ) : isLoginRequired ? (
+            <div className="py-16 text-center">
+              <div className="mx-auto max-w-md rounded-2xl border bg-card p-8 shadow-sm">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                  <Medal className="h-6 w-6 text-primary" />
+                </div>
+
+                <h2 className="text-lg font-bold text-foreground">
+                  로그인한 사용자만 환산 점수 계산기를 사용할 수 있습니다.
+                </h2>
+
+                <p className="mt-2 text-sm text-muted-foreground">
+                  지원 랭킹과 나의 환산 점수를 확인하려면 먼저 로그인해주세요.
+                </p>
+
+                <Button className="mt-5" onClick={() => router.push("/login")}>
+                  로그인하러 가기
+                </Button>
+              </div>
             </div>
           ) : rankings.length === 0 ? (
             <div className="py-16 text-center text-muted-foreground text-sm">

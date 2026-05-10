@@ -91,13 +91,13 @@ const stageBadgeMap: Record<string, string> = {
 
 const topicIconMap: Record<string, React.ReactNode> = {
   "행정·비자": <FileText className="h-3 w-3" />,
-  "주거": <Home className="h-3 w-3" />,
-  "재정": <Wallet className="h-3 w-3" />,
-  "통신": <Wifi className="h-3 w-3" />,
+  주거: <Home className="h-3 w-3" />,
+  재정: <Wallet className="h-3 w-3" />,
+  통신: <Wifi className="h-3 w-3" />,
   "보험·의료": <ShieldCheck className="h-3 w-3" />,
-  "학업": <GraduationCap className="h-3 w-3" />,
+  학업: <GraduationCap className="h-3 w-3" />,
   "생활·적응": <Compass className="h-3 w-3" />,
-  "기타": <MoreHorizontal className="h-3 w-3" />,
+  기타: <MoreHorizontal className="h-3 w-3" />,
 };
 
 function formatDate(dateString?: string) {
@@ -262,7 +262,7 @@ const CommunityDetailPage = () => {
       setReplyTo(null);
 
       setPost((prev) =>
-        prev ? { ...prev, comments: nextComments.length } : prev
+        prev ? { ...prev, comments: nextComments.length } : prev,
       );
     } catch (err) {
       console.error("댓글 작성 실패:", err);
@@ -308,7 +308,7 @@ const CommunityDetailPage = () => {
 
   const topLevelComments = useMemo(
     () => comments.filter((c) => !c.parentId),
-    [comments]
+    [comments],
   );
 
   const getReplies = (parentId: number | string) =>
@@ -334,27 +334,20 @@ const CommunityDetailPage = () => {
     );
   }
 
-const handleReportArticle = async () => {
-  if (!id) return;
+  const handleReportArticle = async () => {
+    if (!id) return;
 
-  const ok = window.confirm("이 게시글을 신고하시겠습니까?");
-  if (!ok) return;
+    const ok = window.confirm("이 게시글을 신고하시겠습니까?");
+    if (!ok) return;
 
-  try {
-    console.log("신고 요청 articleId:", String(id));
-    console.log("accessToken 존재 여부:", !!localStorage.getItem("accessToken"));
-
-    await reportArticle(String(id));
-    alert("게시글을 신고했습니다.");
-  } catch (err) {
-    console.error("게시글 신고 실패:", err);
-    alert(
-      err instanceof Error
-        ? err.message
-        : "게시글 신고에 실패했습니다."
-    );
-  }
-};
+    try {
+      await reportArticle(String(id));
+      alert("게시글을 신고했습니다.");
+    } catch (err) {
+      console.error("게시글 신고 실패:", err);
+      alert(err instanceof Error ? err.message : "게시글 신고에 실패했습니다.");
+    }
+  };
 
   const isQuestionOrInfo = post.type === "question" || post.type === "info";
   const isCommentEmpty = !commentText.trim();
@@ -370,7 +363,7 @@ const handleReportArticle = async () => {
           목록으로
         </button>
 
-       <article className="card-elevated p-5 sm:p-6">
+        <article className="card-elevated p-5 sm:p-6">
           <div className="flex items-center gap-2 mb-3.5 flex-wrap">
             <span className={stageBadgeMap[post.stage]}>
               {stageLabelMap[post.stage]}
@@ -388,8 +381,6 @@ const handleReportArticle = async () => {
               {post.region}
             </span>
           </div>
-
-          
 
           <h1 className="text-lg sm:text-2xl font-bold text-foreground mb-3">
             {post.title}
@@ -409,12 +400,12 @@ const handleReportArticle = async () => {
 
           <Separator className="mb-5" />
 
-<div 
-  className="article-content text-sm sm:text-base text-foreground leading-relaxed mb-8 max-w-none"
-  dangerouslySetInnerHTML={{ __html: post.content }} 
-/>
+          <div
+            className="article-content text-sm sm:text-base text-foreground leading-relaxed mb-8 max-w-none"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
 
-<style>{`
+          <style>{`
   .article-content h1 { font-size: 2em; font-weight: 700; margin: 0.67em 0; display: block; }
   .article-content h2 { font-size: 1.5em; font-weight: 700; margin: 0.75em 0; display: block; }
   .article-content h3 { font-size: 1.25em; font-weight: 600; margin: 0.83em 0; display: block; }
@@ -452,35 +443,37 @@ const handleReportArticle = async () => {
               onClick={handleToggleScrap}
               className="rounded-full"
             >
-              <Bookmark className={`h-4 w-4 mr-1.5 ${isBookmarked ? "fill-current" : ""}`} />
+              <Bookmark
+                className={`h-4 w-4 mr-1.5 ${isBookmarked ? "fill-current" : ""}`}
+              />
               {isBookmarked ? "스크랩됨" : "스크랩"}
             </Button>
 
-           <Button
-  variant="outline"
-  size="sm"
-  className="rounded-full"
-  onClick={handleReportArticle}
->
-  <Flag className="h-4 w-4 mr-1.5 text-destructive" />
-  신고
-</Button>
-<div className="flex-1" />
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={handleReportArticle}
+            >
+              <Flag className="h-4 w-4 mr-1.5 text-destructive" />
+              신고
+            </Button>
+            <div className="flex-1" />
 
-  {post.isAuthor && (
-    <>
-<Button
-  variant="ghost"
-  size="sm"
-  className="text-muted-foreground rounded-full"
-  onClick={() => {
-    if (!id) return;
-    router.push(`/community/${id}/edit`);
-  }}
->
-  <Edit2 className="h-4 w-4 mr-1.5" />
-  수정
-</Button>
+            {post.isAuthor && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground rounded-full"
+                  onClick={() => {
+                    if (!id) return;
+                    router.push(`/community/${id}/edit`);
+                  }}
+                >
+                  <Edit2 className="h-4 w-4 mr-1.5" />
+                  수정
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -496,17 +489,25 @@ const handleReportArticle = async () => {
         </article>
 
         <div className="mt-8">
-          <h2 className="text-base font-bold text-foreground mb-5">댓글 {comments.length}</h2>
+          <h2 className="text-base font-bold text-foreground mb-5">
+            댓글 {comments.length}
+          </h2>
 
           <div className="space-y-3">
             {topLevelComments.map((comment) => (
               <div key={String(comment.id)}>
                 <div className="card-elevated p-4">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm font-medium text-foreground">{comment.author}</span>
-                    <span className="text-xs text-muted-foreground">{comment.date}</span>
+                    <span className="text-sm font-medium text-foreground">
+                      {comment.author}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {comment.date}
+                    </span>
                   </div>
-                  <p className="text-sm text-foreground leading-relaxed">{comment.content}</p>
+                  <p className="text-sm text-foreground leading-relaxed">
+                    {comment.content}
+                  </p>
                   <button
                     onClick={() => {
                       setReplyTo(replyTo === comment.id ? null : comment.id);
@@ -525,10 +526,16 @@ const handleReportArticle = async () => {
                   >
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-sm font-medium text-foreground">{reply.author}</span>
-                      <span className="text-xs text-muted-foreground">{reply.date}</span>
+                      <span className="text-sm font-medium text-foreground">
+                        {reply.author}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {reply.date}
+                      </span>
                     </div>
-                    <p className="text-sm text-foreground leading-relaxed">{reply.content}</p>
+                    <p className="text-sm text-foreground leading-relaxed">
+                      {reply.content}
+                    </p>
                   </div>
                 ))}
 
@@ -538,7 +545,9 @@ const handleReportArticle = async () => {
                       placeholder={`${comment.author}님에게 답글 입력...`}
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSubmitComment()}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && handleSubmitComment()
+                      }
                       className="text-sm bg-card"
                     />
                     <Button
@@ -557,13 +566,18 @@ const handleReportArticle = async () => {
 
           <div className="flex gap-2 mt-5 bg-card p-3 rounded-xl border shadow-sm">
             <Input
-              placeholder={replyTo !== null ? "답글을 입력하세요..." : "댓글을 입력하세요..."}
+              placeholder={
+                replyTo !== null
+                  ? "답글을 입력하세요..."
+                  : "댓글을 입력하세요..."
+              }
               value={replyTo === null ? commentText : ""}
               onChange={(e) => {
                 if (replyTo === null) setCommentText(e.target.value);
               }}
               onKeyDown={(e) => {
-                if (replyTo === null && e.key === "Enter") handleSubmitComment();
+                if (replyTo === null && e.key === "Enter")
+                  handleSubmitComment();
               }}
               className="bg-muted/50 border-none"
             />
