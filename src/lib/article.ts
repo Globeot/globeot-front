@@ -6,8 +6,13 @@ export type ExchangeStatus =
   | "PRE_DEPARTURE"
   | "ABROAD"
   | "RETURNED";
-export type RegionType = "EUROPE" | "AMERICA" | "ASIA" | "OCEANIA" | "ETC";
-
+export type RegionType =
+  | "EUROPE"
+  | "NORTH_AMERICA"
+  | "ASIA"
+  | "OCEANIA"
+  | "ETC";
+  
 export type ArticleItem = {
   id: number | string;
   title: string;

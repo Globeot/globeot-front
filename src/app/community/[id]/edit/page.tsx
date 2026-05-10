@@ -271,7 +271,7 @@ function mapTopicToApi(value: string): string {
 function mapRegionToApi(value: string): RegionType {
   const map: Record<string, RegionType> = {
     유럽: "EUROPE",
-    북미: "AMERICA",
+    북미: "NORTH_AMERICA",
     아시아: "ASIA",
     오세아니아: "OCEANIA",
     기타: "ETC",

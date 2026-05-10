@@ -165,9 +165,10 @@ function mapTopic(value?: string): TopicFilter | undefined {
 function mapRegion(value?: string): string {
   const regionMap: Record<string, string> = {
     EUROPE: "유럽",
-    AMERICA: "북미",
+    NORTH_AMERICA: "북미",
     ASIA: "아시아",
     OCEANIA: "오세아니아",
+    ETC: "기타",
   };
 
   return regionMap[value ?? ""] ?? value ?? "기타";

@@ -68,11 +68,19 @@ html {
 
 button,
 a,
-[role="button"] {
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+label[for],
+select,
+summary {
   cursor: pointer;
 }
 
 button:disabled,
+input:disabled,
+select:disabled,
 [aria-disabled="true"] {
   cursor: not-allowed;
 }
