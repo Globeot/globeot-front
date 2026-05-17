@@ -1,6 +1,6 @@
 import api from "./api";
 
-export type ArticleType = "QUESTION" | "INFO" | "TRADE" | "COMPANION";
+export type ArticleType = "QUESTION" | "INFO" | "SALE" | "COMPANION";
 export type ExchangeStatus =
   | "APPLYING"
   | "PRE_DEPARTURE"

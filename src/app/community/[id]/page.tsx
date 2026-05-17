@@ -128,6 +128,7 @@ function mapType(value?: string): "question" | "trade" | "companion" | "info" {
     case "INFO":
       return "info";
     case "TRADE":
+    case "SALE":
       return "trade";
     case "COMPANION":
       return "companion";

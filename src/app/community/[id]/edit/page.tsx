@@ -283,7 +283,7 @@ function mapTypeToApi(value: string): ArticleType {
   const map: Record<string, ArticleType> = {
     question: "QUESTION",
     info: "INFO",
-    trade: "TRADE",
+    trade: "SALE",
     companion: "COMPANION",
   };
   return map[value] ?? "QUESTION";
