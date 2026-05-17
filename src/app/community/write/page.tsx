@@ -441,15 +441,6 @@ function mapStageToApi(value: string): ExchangeStatus {
   return map[value] ?? "APPLYING";
 }
 
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-  });
-}
-
 /* ───────────── 메인 페이지 ───────────── */
 const CommunityWritePage = () => {
   const router = useRouter();
@@ -535,9 +526,7 @@ const CommunityWritePage = () => {
       const uploadedUrls: string[] = [];
 
       for (const file of images) {
-        const base64 = await fileToBase64(file);
-        const pureBase64 = base64.split(",")[1] ?? base64;
-        const uploadRes = await uploadImage(pureBase64);
+        const uploadRes = await uploadImage(file);
 
         if (!uploadRes) {
           alert("이미지 업로드 실패");
@@ -564,7 +553,7 @@ const CommunityWritePage = () => {
 
       await createArticle(requestBody);
 
-      alert("게시글이 등록됐습니다.");
+      alert("게시글이 등록 되었습니다.");
       router.push("/community");
     } catch (error) {
       console.error("게시글 작성 실패:", error);
