@@ -58,6 +58,7 @@ type UiPost = {
   comments: number;
   isScraped?: boolean;
   isAuthor?: boolean;
+  imageUrls: string[];
 };
 
 type UiComment = {
@@ -236,6 +237,7 @@ useEffect(() => {
         comments: article.commentCount ?? 0,
         isScraped: article.isScrapped ?? article.scrapped ?? false,
         isAuthor: article.isAuthor ?? article.author ?? false,
+        imageUrls: article.imageUrls ?? [],
       };
 
       setPost(mappedPost);
@@ -439,6 +441,19 @@ if (!isLoggedIn) {
             className="article-content text-sm sm:text-base text-foreground leading-relaxed mb-8 max-w-none"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
+          
+{post.imageUrls && post.imageUrls.length > 0 && (
+  <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+    {post.imageUrls.map((url, idx) => (
+      <img
+        key={`${url}-${idx}`}
+        src={url}
+        alt={`게시글 이미지 ${idx + 1}`}
+        className="w-full rounded-xl border object-cover"
+      />
+    ))}
+  </div>
+)}
 
           <style>{`
   .article-content h1 { font-size: 2em; font-weight: 700; margin: 0.67em 0; display: block; }

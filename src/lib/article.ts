@@ -200,13 +200,19 @@ export const searchSchools = async (name: string) => {
   return res.data;
 };
 
-export const uploadImage = async (file: string) => {
+export const uploadImage = async (file: File) => {
   try {
-    const res = await api.post<UploadImageResponse>("/images/upload", {
-      file,
-    });
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await api.post<UploadImageResponse>(
+      "/images/upload",
+      formData,
+    );
+
     return res.data;
   } catch (error: any) {
+    console.error("이미지 업로드 실패:", error);
     return null;
   }
 };
