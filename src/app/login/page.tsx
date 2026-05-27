@@ -55,7 +55,9 @@ const LoginPage = () => {
 
   // --- 로그인 (Login) ---
   const handleLogin = async () => {
-    if (!email || !password) {
+    const trimmedEmail = email.trim().toLowerCase();
+
+    if (!trimmedEmail || !password) {
       alert("이메일과 비밀번호를 입력하세요.");
       return;
     }
@@ -63,37 +65,58 @@ const LoginPage = () => {
     try {
       const res = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: trimmedEmail,
+          password,
+        }),
       });
 
-      const data = await res.json();
+      const text = await res.text();
 
-      if (!res.ok) {
-        alert(data.message || "로그인 실패");
+      let data: any = null;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch {
+        console.error("JSON 파싱 실패. 서버 원본 응답:", text);
+      }
+
+      console.log("로그인 응답 status:", res.status);
+      console.log("로그인 응답 data:", data);
+
+      if (!res.ok || data?.isSuccess === false) {
+        alert(data?.message || "로그인에 실패했습니다.");
         return;
       }
 
-      // 수정
       const token =
         data?.token ||
         data?.accessToken ||
         data?.result?.token ||
         data?.result?.accessToken;
 
-      if (token) {
-        localStorage.setItem("accessToken", token);
-        alert("로그인 성공!");
-        window.location.href = "/";
-      } else {
-        alert(
-          "서버 응답에 토큰(token)이 포함되어 있지 않습니다. 콘솔을 확인하세요.",
-        );
+      if (!token) {
         console.error("토큰 파싱 실패. 응답 구조:", data);
+        alert("로그인은 성공했지만 토큰을 찾을 수 없습니다.");
+        return;
       }
+
+      localStorage.setItem("accessToken", token);
+
+      if (data?.result?.refreshToken) {
+        localStorage.setItem("refreshToken", data.result.refreshToken);
+      }
+
+      alert("로그인 성공!");
+      window.location.href = "/";
     } catch (err) {
-      console.error(err);
-      alert("서비 오류가 발생했습니다.");
+      console.error("fetch 자체 실패:", err);
+
+      alert(
+        "서버에 연결할 수 없습니다. CORS 설정 또는 서버 주소를 확인해야 합니다.",
+      );
     }
   };
 
