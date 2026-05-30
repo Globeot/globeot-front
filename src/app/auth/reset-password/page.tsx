@@ -1,15 +1,22 @@
-"use client"
+"use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "../../../components/ui/input";
 import { Button } from "../../../components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../../../components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "../../../components/ui/card";
 import api from "../../../lib/api";
 
 const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const token = searchParams?.get("token") || "";
   const router = useRouter();
@@ -27,10 +34,12 @@ export default function ResetPasswordPage() {
       setError("비밀번호는 8자 이상, 영문+숫자 조합이어야 합니다.");
       return;
     }
+
     if (password !== confirm) {
       setError("비밀번호가 일치하지 않습니다.");
       return;
     }
+
     if (!token) {
       setError("유효한 토큰이 없습니다.");
       return;
@@ -40,12 +49,13 @@ export default function ResetPasswordPage() {
       setLoading(true);
       await api.post("/auth/reset-password", { token, password });
       setError(null);
-      // 성공 메시지 표시 후 로그인 페이지로 이동
+
       setTimeout(() => {
         router.push("/login");
       }, 1200);
     } catch (err: any) {
       console.error(err);
+
       if (err?.response?.status === 400) {
         setError(err?.response?.data?.message || "유효하지 않은 요청입니다.");
       } else if (err?.response?.status === 410) {
@@ -66,10 +76,13 @@ export default function ResetPasswordPage() {
             <CardTitle>비밀번호 재설정</CardTitle>
             <CardDescription>새 비밀번호를 입력하고 변경하세요.</CardDescription>
           </CardHeader>
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="text-sm text-muted-foreground">새 비밀번호</label>
+                <label className="text-sm text-muted-foreground">
+                  새 비밀번호
+                </label>
                 <Input
                   placeholder="8자 이상, 영문+숫자 조합"
                   type="password"
@@ -77,8 +90,11 @@ export default function ResetPasswordPage() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
+
               <div>
-                <label className="text-sm text-muted-foreground">비밀번호 확인</label>
+                <label className="text-sm text-muted-foreground">
+                  비밀번호 확인
+                </label>
                 <Input
                   placeholder="비밀번호를 다시 입력하세요"
                   type="password"
@@ -89,7 +105,7 @@ export default function ResetPasswordPage() {
 
               {error && <p className="text-sm text-destructive">{error}</p>}
 
-              <CardFooter>
+              <CardFooter className="px-0">
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "변경 중..." : "비밀번호 변경"}
                 </Button>
@@ -99,5 +115,13 @@ export default function ResetPasswordPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="p-4">Loading...</div>}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
