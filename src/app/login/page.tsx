@@ -302,6 +302,11 @@ const LoginPage = () => {
                 로그인
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
+              <div className="text-center mt-2">
+                <a href="/auth/forgot-password" className="text-sm text-muted-foreground hover:underline">
+                  비밀번호를 잊으셨나요?
+                </a>
+              </div>
             </div>
           ) : signupStep === 1 ? (
             <div className="space-y-4">
