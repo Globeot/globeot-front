@@ -557,11 +557,11 @@ export default function MyPage() {
                     회원 탈퇴
                   </button>
                   <button
-                    onClick={() => router.push('/auth/forgot-password')}
+                    onClick={() => router.push('/auth/reset-password')}
                     className="w-full flex items-center gap-3 px-5 py-4 text-sm font-medium hover:bg-muted/50 transition-colors"
                   >
                     <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                    비밀번호 재설정 (임시 비밀번호 발급)
+                    비밀번호 변경
                   </button>
                 </div>
               )}

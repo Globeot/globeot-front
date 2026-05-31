@@ -1,3 +1,4 @@
+// forgot-password
 "use client"
 
 import React, { useState } from "react";
@@ -57,64 +58,70 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-6">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground text-xl font-extrabold mb-4">
-            E
-          </div>
-          <h1 className="text-2xl font-bold text-foreground mb-1">임시 비밀번호 발급</h1>
-          <p className="text-sm text-muted-foreground">가입 시 사용한 학교 이메일을 입력하면 임시 비밀번호를 발급합니다.</p>
+  <div className="min-h-[70vh] flex items-center justify-center px-4">
+    <div className="w-full max-w-md">
+      <div className="text-center mb-6">
+        <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground text-xl font-extrabold mb-4">
+          E
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="sr-only">임시 비밀번호 발급</CardTitle>
-            <CardDescription className="sr-only">학교 이메일로 임시 비밀번호 발송</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="text-sm text-muted-foreground">이메일</label>
-                <Input
-                  placeholder="example@ewha.ac.kr"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onBlur={() => setTouched(true)}
-                />
-                <p className="text-xs text-muted-foreground mt-2">
-                  가입 시 사용한 학교 이메일을 입력해 주세요. (@ewha.ac.kr / @ewhain.net)
-                </p>
-                {touched && email && !isValidSchoolEmail(email) && (
-                  <p className="text-sm text-destructive mt-2">학교 이메일만 입력해 주세요.</p>
-                )}
-              </div>
-
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              {message && <p className="text-sm text-success">{message}</p>}
-
-              <CardFooter>
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={loading || !isValidSchoolEmail(email)}
-                >
-                  {loading ? "전송 중..." : "임시 비밀번호 보내기"}
-                </Button>
-              </CardFooter>
-            </form>
-            <div className="text-center mt-4 space-y-2">
-              <p className="text-xs text-muted-foreground">
-                이메일은 가입 시 사용한 학교 이메일만 사용할 수 있습니다.
-              </p>
-              <Link href="/login" className="text-sm text-muted-foreground hover:underline">
-                ← 로그인으로 돌아가기
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+        <h1 className="text-2xl font-bold text-foreground mb-1">비밀번호 찾기</h1>
+        <p className="text-sm text-muted-foreground">
+          가입한 학교 이메일로 임시 비밀번호를 발급받을 수 있습니다.
+        </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="sr-only">임시 비밀번호 발급</CardTitle>
+          <CardDescription className="sr-only">
+            학교 이메일로 임시 비밀번호 발송
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="text-sm text-muted-foreground">이메일</label>
+              <Input
+                placeholder="example@ewha.ac.kr"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => setTouched(true)}
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                가입 시 사용한 학교 이메일을 입력해 주세요. (@ewha.ac.kr / @ewhain.net)
+              </p>
+              {touched && email && !isValidSchoolEmail(email) && (
+                <p className="text-sm text-destructive mt-2">
+                  학교 이메일만 입력해 주세요.
+                </p>
+              )}
+            </div>
+
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            {message && <p className="text-sm text-success">{message}</p>}
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading || !isValidSchoolEmail(email)}
+            >
+              {loading ? "전송 중..." : "임시 비밀번호 보내기"}
+            </Button>
+          </form>
+
+          <div className="text-center mt-4 space-y-2">
+            <p className="text-xs text-muted-foreground">
+              이메일은 가입 시 사용한 학교 이메일만 사용할 수 있습니다.
+            </p>
+            <Link href="/login" className="text-sm text-muted-foreground hover:underline">
+              ← 로그인으로 돌아가기
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
-  );
+  </div>
+);
 }
