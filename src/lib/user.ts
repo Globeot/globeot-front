@@ -59,6 +59,13 @@ export async function updateMyProfile(body: {
   return res.data;
 }
 
+export async function updateMyPassword(body: {
+  newPassword: string;
+  confirmPassword: string;
+}) {
+  const res = await api.patch("/users/password", body);
+  return res.data;
+}
 
 export async function getMyArticles() {
   const res = await api.get<any>("/users/articles");

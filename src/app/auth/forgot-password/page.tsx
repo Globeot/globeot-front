@@ -24,12 +24,18 @@ export default function ForgotPasswordPage() {
       return;
     }
 
+    if (!isValidSchoolEmail(email)) {
+      setError("학교 이메일(@ewha.ac.kr 또는 @ewhain.net)만 입력해주세요.");
+      return;
+    }
+
     try {
       setLoading(true);
       await api.post("/auth/forgot-password", { email });
       setMessage(
-        "임시 비밀번호를 이메일로 발송했습니다. 메일을 확인한 후 임시 비밀번호로 로그인하고 비밀번호를 변경하세요.",
+        "입력한 이메일로 임시 비밀번호가 발급되었습니다. 임시 비밀번호로 로그인한 뒤 마이페이지에서 비밀번호를 변경해 주세요.",
       );
+      setError(null);
     } catch (err: any) {
       console.error(err);
       if (err?.response?.status === 429) {
@@ -98,7 +104,10 @@ export default function ForgotPasswordPage() {
                 </Button>
               </CardFooter>
             </form>
-            <div className="text-center mt-4">
+            <div className="text-center mt-4 space-y-2">
+              <p className="text-xs text-muted-foreground">
+                이메일은 가입 시 사용한 학교 이메일만 사용할 수 있습니다.
+              </p>
               <Link href="/login" className="text-sm text-muted-foreground hover:underline">
                 ← 로그인으로 돌아가기
               </Link>
