@@ -91,12 +91,6 @@ const stageBadgeMap: Record<string, string> = {
 const POSTS_PER_PAGE = 5;
 const ENTRIES_PER_PAGE = 5;
 
-/**
- * 현재 화면은 API에서 데이터를 받아온 뒤
- * 프론트에서 5개씩 나눠서 페이지네이션합니다.
- *
- * 따라서 백엔드에는 한 번에 넉넉한 개수를 요청합니다.
- */
 const API_PAGE_SIZE = 100;
 
 const ISEP_SCHOOL_ID = "26";
@@ -110,21 +104,6 @@ const levelToLabel = (level?: string | null) => {
   return "-";
 };
 
-/**
- * 다음 두 응답 구조를 모두 배열로 변환합니다.
- *
- * 1. 페이지 응답
- * {
- *   result: {
- *     content: [...]
- *   }
- * }
- *
- * 2. 배열 응답
- * {
- *   result: [...]
- * }
- */
 function extractContent<T>(data: unknown): T[] {
   if (Array.isArray(data)) {
     return data as T[];
@@ -154,9 +133,6 @@ function extractContent<T>(data: unknown): T[] {
   return Array.isArray(content) ? (content as T[]) : [];
 }
 
-/**
- * 학교 상세 응답에서 result 내부의 객체를 추출합니다.
- */
 function extractSchool(data: unknown): SchoolInfo | null {
   if (!data || typeof data !== "object") {
     return null;
@@ -372,6 +348,7 @@ function SchoolDetailPageContent() {
   const [postPage, setPostPage] = useState(1);
   const [entryPage, setEntryPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
 
   const isIsepPage = schoolId === ISEP_SCHOOL_ID;
 
@@ -390,6 +367,7 @@ function SchoolDetailPageContent() {
       setIsLoading(true);
       setEntryPage(1);
       setPostPage(1);
+      setImageError(false);
 
       const historyRequest = api.get(`/schools/${schoolId}/history`, {
         params: {
@@ -406,12 +384,6 @@ function SchoolDetailPageContent() {
       });
 
       try {
-        /**
-         * ISEP 페이지
-         *
-         * 학교 상세 API는 호출하지 않지만,
-         * 과거 배정 이력과 관련 커뮤니티 글은 모두 호출합니다.
-         */
         if (isIsepPage) {
           const [historyResult, articleResult] = await Promise.allSettled([
             historyRequest,
@@ -448,13 +420,6 @@ function SchoolDetailPageContent() {
           return;
         }
 
-        /**
-         * 일반 학교 페이지
-         *
-         * 상세 정보, 과거 배정 이력, 관련 커뮤니티 글을 호출합니다.
-         * 일부 요청이 실패해도 나머지 영역은 표시될 수 있도록
-         * Promise.allSettled를 사용합니다.
-         */
         const [detailResult, historyResult, articleResult] =
           await Promise.allSettled([
             api.get(`/schools/${schoolId}`),
@@ -571,9 +536,6 @@ function SchoolDetailPageContent() {
   const maxScore = hasScore ? Math.max(...validScores) : null;
   const minScore = hasScore ? Math.min(...validScores) : null;
 
-  /**
-   * ISEP 전용 페이지
-   */
   if (isIsepPage) {
     return (
       <div className="py-10">
@@ -653,10 +615,6 @@ function SchoolDetailPageContent() {
     );
   }
 
-  /**
-   * 위에서 일반 학교의 null 여부를 검사했으므로
-   * 여기서는 SchoolInfo로 사용할 수 있습니다.
-   */
   const currentSchool = school as SchoolInfo;
 
   const livingCostLabel =
@@ -695,19 +653,22 @@ function SchoolDetailPageContent() {
           파견 DB로
         </button>
 
-        <div className="mb-8">
-          <div className="flex justify-center">
-            <img
-              src={currentSchool.imgUrl}
-              alt={currentSchool.name}
-              className="max-h-[420px] w-auto max-w-full rounded-3xl object-contain shadow-md"
-            />
-          </div>
+        {currentSchool.imgUrl && !imageError && (
+          <div className="mb-8">
+            <div className="flex justify-center">
+              <img
+                src={currentSchool.imgUrl}
+                alt={currentSchool.name}
+                onError={() => setImageError(true)}
+                className="max-h-[420px] w-auto max-w-full rounded-3xl object-contain shadow-md"
+              />
+            </div>
 
-          <p className="mx-auto mt-2 max-w-5xl text-right text-[10px] text-muted-foreground">
-            *Images from Wikimedia Commons
-          </p>
-        </div>
+            <p className="mx-auto mt-2 max-w-5xl text-right text-[10px] text-muted-foreground">
+              *Images from Wikimedia Commons
+            </p>
+          </div>
+        )}
 
         <div className="mb-6 flex justify-between">
           <div>
