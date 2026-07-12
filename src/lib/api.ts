@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://globeot.duckdns.org/api/v1",
+  baseURL: "https://globetback.duckdns.org/api/v1",
 });
 
 api.interceptors.request.use((config) => {

@@ -10,7 +10,7 @@ import { Label } from "../../components/ui/label";
 type AuthMode = "login" | "signup";
 type SignupStep = 1 | 2 | 3;
 
-const API_BASE_URL = "https://globeot.duckdns.org/api/v1/auth";
+const API_BASE_URL = "https://globetback.duckdns.org/api/v1/auth";
 
 const LoginPage = () => {
   //화면 구별
