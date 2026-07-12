@@ -137,8 +137,14 @@ const LoginPage = () => {
       });
 
       if (!res.ok) {
-        const msg = await res.text();
-        alert(msg || "인증번호 발송 실패");
+        const data = await res.json().catch(() => null);
+
+        if (data?.code === "AUTH4002") {
+          alert("이미 가입된 이메일입니다.");
+        } else {
+          alert(data?.message || "인증번호 발송에 실패했습니다.");
+        }
+
         return;
       }
 
@@ -326,7 +332,10 @@ const LoginPage = () => {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <div className="text-center mt-2">
-                <a href="/auth/forgot-password" className="text-sm text-muted-foreground hover:underline">
+                <a
+                  href="/auth/forgot-password"
+                  className="text-sm text-muted-foreground hover:underline"
+                >
                   비밀번호를 잊으셨나요?
                 </a>
               </div>
