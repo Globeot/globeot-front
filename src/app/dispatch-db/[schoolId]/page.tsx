@@ -116,10 +116,12 @@ function SchoolDetailPageContent() {
 
         if (isIsepPage) {
           const historyRes = await api.get(`/schools/${schoolId}/history`);
-          const historyData = historyRes.data?.result || historyRes.data || [];
+          const historyResult = historyRes.data?.result ?? historyRes.data;
 
           setSchool(null);
-          setEntries(historyData);
+          setEntries(
+            Array.isArray(historyResult?.content) ? historyResult.content : [],
+          );
           setPosts([]);
           setIsBookmarked(false);
           return;
@@ -130,11 +132,13 @@ function SchoolDetailPageContent() {
           api.get(`/schools/${schoolId}/history`),
         ]);
 
-        const schoolData = detailRes.data?.result || detailRes.data;
-        const historyData = historyRes.data?.result || historyRes.data || [];
+        const schoolData = detailRes.data?.result ?? detailRes.data;
+        const historyResult = historyRes.data?.result ?? historyRes.data;
 
         setSchool(schoolData);
-        setEntries(historyData);
+        setEntries(
+          Array.isArray(historyResult?.content) ? historyResult.content : [],
+        );
         setIsBookmarked(schoolData?.isFavorite || false);
 
         try {
