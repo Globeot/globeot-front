@@ -75,6 +75,9 @@ export default function ResetPasswordPage() {
                   className="mt-1.5"
                   placeholder="새 비밀번호를 입력하세요"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  비밀번호는 영문과 숫자를 포함한 8자 이상이어야 합니다.
+                </p>
               </div>
 
               <div>
