@@ -195,9 +195,11 @@ export default function MyPage() {
       localStorage.removeItem("accessToken");
       alert("회원 탈퇴가 완료됐습니다.");
       router.push("/");
-    } catch (error) {
+    } catch (error: any) {
       console.error("회원 탈퇴 실패:", error);
-      alert("회원 탈퇴에 실패했습니다.");
+      alert(
+        error?.response?.data?.message || "회원 탈퇴에 실패했습니다.",
+      );
     }
   };
 
