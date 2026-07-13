@@ -131,6 +131,7 @@ function mapType(value?: string): Exclude<TypeFilter, "all"> {
     case "INFO":
       return "info";
     case "TRADE":
+    case "SALE":
       return "trade";
     case "COMPANION":
       return "companion";

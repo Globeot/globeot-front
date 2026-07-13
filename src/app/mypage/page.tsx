@@ -58,6 +58,7 @@ const stageBadgeClassMap: Record<StageValue, string> = {
 const articleTypeLabelMap: Record<string, string> = {
   QUESTION: "질문",
   INFO: "정보",
+  SALE: "중고거래",
   TRADE: "중고거래",
   COMPANION: "동행",
 };
@@ -350,7 +351,7 @@ export default function MyPage() {
                             <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
                               {articleTypeLabelMap[post.type] ?? post.type}
                             </span>
-                            {post.type === "TRADE" && post.articleStatus && (
+                            {(post.type === "SALE" || post.type === "TRADE") && post.articleStatus && (
                               <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-full">
                                 {articleStatusLabelMap[post.articleStatus] ??
                                   post.articleStatus}
@@ -365,7 +366,7 @@ export default function MyPage() {
                             {post.commentCount}
                           </p>
                         </div>
-                        {post.type === "TRADE" &&
+                        {(post.type === "SALE" || post.type === "TRADE") &&
                           post.articleStatus === "OPEN" && (
                             <Button variant="outline" size="sm">
                               거래완료

@@ -208,6 +208,7 @@ function mapTypeFromApi(
     case "INFO":
       return "info";
     case "TRADE":
+    case "SALE":
       return "trade";
     case "COMPANION":
       return "companion";
