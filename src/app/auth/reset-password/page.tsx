@@ -106,7 +106,7 @@ export default function ResetPasswordPage() {
             </form>
           </CardContent>
 
-          <CardFooter className="px-0">
+          <CardFooter>
             <Button
               variant="secondary"
               onClick={() => router.push("/mypage")}
