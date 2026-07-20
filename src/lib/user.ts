@@ -10,7 +10,7 @@ export type MyArticle = {
   articleId: number | string;
   title: string;
   content?: string;
-  type: "QUESTION" | "INFO" | "TRADE" | "COMPANION";
+  type: "QUESTION" | "INFO" | "SALE" | "COMPANION";
   articleStatus?: "OPEN" | "CLOSED";
   createdAt: string;
   commentCount: number;
@@ -29,7 +29,7 @@ export type MyScrap = {
   articleId: number | string;
   title: string;
   content?: string;
-  type?: "QUESTION" | "INFO" | "TRADE" | "COMPANION";
+  type?: "QUESTION" | "INFO" | "SALE" | "COMPANION";
   createdAt?: string;
   commentCount?: number;
 };
