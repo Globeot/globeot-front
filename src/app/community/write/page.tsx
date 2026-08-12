@@ -34,6 +34,7 @@ import {
   type ArticleType,
   type ExchangeStatus,
 } from "../../../lib/article";
+import { trackEvent } from "../../../lib/gtag";
 import { DayPicker, type DateRange } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 
@@ -553,6 +554,12 @@ const CommunityWritePage = () => {
 
       await createArticle(requestBody);
 
+      trackEvent("post_create", {
+        type,
+        region,
+        exchange_status: stage,
+      });
+
       alert("게시글이 등록 되었습니다.");
       router.push("/community");
     } catch (error) {
@@ -735,15 +742,15 @@ const CommunityWritePage = () => {
           )}
 
           <div className="space-y-3 pb-6 border-b">
-  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-    학교 (선택)
-    <span className="ml-1 font-normal normal-case text-muted-foreground/70">
-      (ISEP 포함)
-    </span>
-  </label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              학교 (선택)
+              <span className="ml-1 font-normal normal-case text-muted-foreground/70">
+                (ISEP 포함)
+              </span>
+            </label>
 
-  <SchoolAutocomplete value={school} onChange={setSchool} />
-</div>
+            <SchoolAutocomplete value={school} onChange={setSchool} />
+          </div>
 
           <Input
             placeholder="제목을 입력하세요 *"
