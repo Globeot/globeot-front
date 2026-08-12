@@ -1,4 +1,4 @@
-import "./";
+import "./globals.css";
 import type { Metadata } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import GNB from "../components/GNB";
