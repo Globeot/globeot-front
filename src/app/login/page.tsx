@@ -5,6 +5,7 @@ import { Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
+import { trackEvent } from "../../lib/gtag";
 
 //화면 구별
 type AuthMode = "login" | "signup";
@@ -109,6 +110,11 @@ const LoginPage = () => {
         localStorage.setItem("refreshToken", data.result.refreshToken);
       }
 
+      trackEvent("login", {
+        method: "email",
+        transport_type: "beacon",
+      });
+
       alert("로그인 성공!");
       window.location.href = "/";
     } catch (err) {
@@ -148,6 +154,8 @@ const LoginPage = () => {
         return;
       }
 
+      trackEvent("sign_up_step_email_sent");
+
       alert("인증번호가 이메일로 발송되었습니다.");
       setSignupStep(2);
     } catch (error) {
@@ -177,6 +185,9 @@ const LoginPage = () => {
       }
 
       alert("이메일 인증 성공!");
+
+      trackEvent("sign_up_step_verified");
+
       setSignupStep(3);
     } catch (error) {
       alert("인증 확인 중 오류 발생");
@@ -245,6 +256,11 @@ const LoginPage = () => {
         alert(result.message || "회원가입 실패");
         return;
       }
+
+      trackEvent("sign_up", {
+        method: "email",
+        exchange_status: stage,
+      });
 
       alert("회원가입이 완료되었습니다! 로그인해 주세요.");
       setMode("login");
