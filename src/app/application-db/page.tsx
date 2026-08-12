@@ -10,6 +10,7 @@ import { Label } from "../../components/ui/label";
 import { gpaToPercentile } from "./gpaData";
 import { ImageUploadButton } from "../../components/tiptap-ui/image-upload-button";
 import api from "../../lib/api";
+import { trackEvent } from "../../lib/gtag";
 
 type SchoolSearchItem = {
   id: number;
@@ -253,6 +254,15 @@ const ApplicationDBPage = () => {
 
     checkLogin();
   }, []);
+
+  useEffect(() => {
+    if (!isAuthChecking && isLoginRequired) {
+      trackEvent("login_required_view", {
+        source: "application-db",
+      });
+    }
+  }, [isAuthChecking, isLoginRequired]);
+
   /* ─── 지원서 제출 로직 ─── */
   const handleTranscriptSubmit = async () => {
     if (!canSubmitTranscript) return;
@@ -287,6 +297,12 @@ const ApplicationDBPage = () => {
       });
 
       if (res.status === 200 || res.status === 201) {
+        trackEvent("application_submit", {
+          test_type: examType,
+          semester: applySemester,
+          school_count: schoolChoices.filter(Boolean).length,
+        });
+
         alert("지원서 제출 완료!");
         router.push("/application-db/pending");
       }

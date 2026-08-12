@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { Input } from "../../components/ui/input";
@@ -14,6 +14,7 @@ import {
   TableCell,
 } from "../../components/ui/table";
 import api from "../../lib/api";
+import { trackEvent } from "../../lib/gtag";
 
 interface DispatchEntry {
   schoolId: number;
@@ -53,6 +54,10 @@ function DispatchDBPageContent() {
   });
 
   const ITEMS_PER_PAGE = 10;
+  const searchEventTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const hasCompletedInitialFetchRef = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -68,6 +73,14 @@ function DispatchDBPageContent() {
       scroll: false,
     });
   }, [currentPage]);
+
+  useEffect(() => {
+    return () => {
+      if (searchEventTimerRef.current) {
+        clearTimeout(searchEventTimerRef.current);
+      }
+    };
+  }, []);
 
   // 학교 목록 불러오기
   useEffect(() => {
@@ -87,6 +100,21 @@ function DispatchDBPageContent() {
 
         setSchools(res.data.result || []);
         setIsLoginRequired(false);
+
+        if (!hasCompletedInitialFetchRef.current) {
+          hasCompletedInitialFetchRef.current = true;
+        } else {
+          if (searchEventTimerRef.current) {
+            clearTimeout(searchEventTimerRef.current);
+          }
+
+          searchEventTimerRef.current = setTimeout(() => {
+            trackEvent("search", {
+              search_term: schoolSearch,
+              score_range: scoreRange.label,
+            });
+          }, 500);
+        }
       } catch (err: any) {
         const status = err?.response?.status;
 
@@ -267,11 +295,16 @@ function DispatchDBPageContent() {
                       </TableCell>
                       <TableCell>
                         <button
-                          onClick={() =>
+                          onClick={() => {
+                            trackEvent("select_content", {
+                              content_type: "school",
+                              item_id: entry.schoolId,
+                            });
+
                             router.push(
                               `/dispatch-db/${entry.schoolId}?fromPage=${currentPage}`,
-                            )
-                          }
+                            );
+                          }}
                           className="text-sm font-medium text-primary hover:underline text-left"
                         >
                           {entry.schoolName}

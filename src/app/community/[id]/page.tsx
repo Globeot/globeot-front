@@ -32,6 +32,7 @@ import {
   reportArticle,
   type CommentItem,
 } from "../../../lib/article";
+import { trackEvent } from "../../../lib/gtag";
 
 type StageFilter = "pre_assign" | "pre_depart" | "abroad" | "returned";
 type TopicFilter =
@@ -200,61 +201,61 @@ const CommunityDetailPage = () => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
-const [reportReason, setReportReason] = useState("");
-const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
 
-useEffect(() => {
-  const token = localStorage.getItem("accessToken");
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
 
-  if (!token) {
-    setLoading(false);
-    return;
-  }
-
-  const fetchDetail = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const [detailData, commentData] = await Promise.all([
-        getArticleDetail(String(id)),
-        getArticleComments(String(id)),
-      ]);
-
-      const article = detailData.result;
-
-      const mappedPost: UiPost = {
-        id: article.id,
-        title: article.title,
-        content: article.content,
-        stage: mapStage(article.exchangeStatus),
-        region: mapRegion(article.region),
-        type: mapType(article.type),
-        topic: mapTopic(article.topic),
-        author: article.authorNickname ?? "익명",
-        date: formatDate(article.createdAt),
-        views: article.viewCount ?? 0,
-        comments: article.commentCount ?? 0,
-        isScraped: article.isScrapped ?? article.scrapped ?? false,
-        isAuthor: article.isAuthor ?? article.author ?? false,
-        imageUrls: article.imageUrls ?? [],
-      };
-
-      setPost(mappedPost);
-      setIsBookmarked(!!(article.isScrapped ?? article.scrapped));
-      setComments((commentData.result ?? []).map(toUiComment));
-    } catch (err) {
-      console.error("게시글 상세 조회 실패:", err);
-      setError("게시글을 불러오지 못했습니다.");
-    } finally {
+    if (!token) {
       setLoading(false);
+      return;
     }
-  };
 
-  if (id) {
-    fetchDetail();
-  }
-}, [id]);
+    const fetchDetail = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const [detailData, commentData] = await Promise.all([
+          getArticleDetail(String(id)),
+          getArticleComments(String(id)),
+        ]);
+
+        const article = detailData.result;
+
+        const mappedPost: UiPost = {
+          id: article.id,
+          title: article.title,
+          content: article.content,
+          stage: mapStage(article.exchangeStatus),
+          region: mapRegion(article.region),
+          type: mapType(article.type),
+          topic: mapTopic(article.topic),
+          author: article.authorNickname ?? "익명",
+          date: formatDate(article.createdAt),
+          views: article.viewCount ?? 0,
+          comments: article.commentCount ?? 0,
+          isScraped: article.isScrapped ?? article.scrapped ?? false,
+          isAuthor: article.isAuthor ?? article.author ?? false,
+          imageUrls: article.imageUrls ?? [],
+        };
+
+        setPost(mappedPost);
+        setIsBookmarked(!!(article.isScrapped ?? article.scrapped));
+        setComments((commentData.result ?? []).map(toUiComment));
+      } catch (err) {
+        console.error("게시글 상세 조회 실패:", err);
+        setError("게시글을 불러오지 못했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchDetail();
+    }
+  }, [id]);
 
   const handleSubmitComment = async () => {
     if (!commentText.trim() || !id) return;
@@ -265,6 +266,10 @@ useEffect(() => {
       await createArticleComment(String(id), {
         content: commentText.trim(),
         parentId: replyTo ?? undefined,
+      });
+
+      trackEvent("comment_create", {
+        article_id: String(id),
       });
 
       const commentData = await getArticleComments(String(id));
@@ -291,10 +296,22 @@ useEffect(() => {
     try {
       if (isBookmarked) {
         await unscrapArticle(String(id));
+
+        trackEvent("scrap_toggle", {
+          article_id: String(id),
+          action: "remove",
+        });
+
         setIsBookmarked(false);
         setPost((prev) => (prev ? { ...prev, isScraped: false } : prev));
       } else {
         await scrapArticle(String(id));
+
+        trackEvent("scrap_toggle", {
+          article_id: String(id),
+          action: "add",
+        });
+
         setIsBookmarked(true);
         setPost((prev) => (prev ? { ...prev, isScraped: true } : prev));
       }
@@ -311,6 +328,11 @@ useEffect(() => {
 
     try {
       await deleteArticle(String(id));
+
+      trackEvent("post_delete", {
+        article_id: String(id),
+      });
+
       alert("게시글이 삭제되었습니다.");
       router.push("/community");
     } catch (err) {
@@ -337,23 +359,21 @@ useEffect(() => {
     );
   }
   const isLoggedIn =
-  typeof window !== "undefined" && !!localStorage.getItem("accessToken");
+    typeof window !== "undefined" && !!localStorage.getItem("accessToken");
 
-if (!isLoggedIn) {
-  return (
-    <div className="py-20">
-      <div className="container-tight text-center">
-        <p className="text-muted-foreground mb-4">
-          로그인한 사용자만 볼 수 있습니다.
-        </p>
+  if (!isLoggedIn) {
+    return (
+      <div className="py-20">
+        <div className="container-tight text-center">
+          <p className="text-muted-foreground mb-4">
+            로그인한 사용자만 볼 수 있습니다.
+          </p>
 
-        <Button onClick={() => router.push("/login")}>
-          로그인
-        </Button>
+          <Button onClick={() => router.push("/login")}>로그인</Button>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   if (error || !post) {
     return (
@@ -366,25 +386,29 @@ if (!isLoggedIn) {
   }
 
   const handleReportArticle = async () => {
-  if (!id || !reportReason.trim()) return;
+    if (!id || !reportReason.trim()) return;
 
-  try {
-    setReportSubmitting(true);
+    try {
+      setReportSubmitting(true);
 
-    await reportArticle(String(id), {
-      reason: reportReason.trim(),
-    });
+      await reportArticle(String(id), {
+        reason: reportReason.trim(),
+      });
 
-    alert("신고가 접수됐습니다.");
-    setReportOpen(false);
-    setReportReason("");
-  } catch (err) {
-    console.error("게시글 신고 실패:", err);
-    alert(err instanceof Error ? err.message : "게시글 신고에 실패했습니다.");
-  } finally {
-    setReportSubmitting(false);
-  }
-};
+      trackEvent("content_report", {
+        article_id: String(id),
+      });
+
+      alert("신고가 접수됐습니다.");
+      setReportOpen(false);
+      setReportReason("");
+    } catch (err) {
+      console.error("게시글 신고 실패:", err);
+      alert(err instanceof Error ? err.message : "게시글 신고에 실패했습니다.");
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
 
   const isQuestionOrInfo = post.type === "question" || post.type === "info";
   const isCommentEmpty = !commentText.trim();
@@ -441,19 +465,19 @@ if (!isLoggedIn) {
             className="article-content text-sm sm:text-base text-foreground leading-relaxed mb-8 max-w-none"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
-          
-{post.imageUrls && post.imageUrls.length > 0 && (
-  <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-    {post.imageUrls.map((url, idx) => (
-      <img
-        key={`${url}-${idx}`}
-        src={url}
-        alt={`게시글 이미지 ${idx + 1}`}
-        className="w-full rounded-xl border object-cover"
-      />
-    ))}
-  </div>
-)}
+
+          {post.imageUrls && post.imageUrls.length > 0 && (
+            <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {post.imageUrls.map((url, idx) => (
+                <img
+                  key={`${url}-${idx}`}
+                  src={url}
+                  alt={`게시글 이미지 ${idx + 1}`}
+                  className="w-full rounded-xl border object-cover"
+                />
+              ))}
+            </div>
+          )}
 
           <style>{`
   .article-content h1 { font-size: 2em; font-weight: 700; margin: 0.67em 0; display: block; }
@@ -500,14 +524,14 @@ if (!isLoggedIn) {
             </Button>
 
             <Button
-  variant="outline"
-  size="sm"
-  className="rounded-full"
-  onClick={() => setReportOpen(true)}
->
-  <Flag className="h-4 w-4 mr-1.5 text-destructive" />
-  신고
-</Button>
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={() => setReportOpen(true)}
+            >
+              <Flag className="h-4 w-4 mr-1.5 text-destructive" />
+              신고
+            </Button>
             <div className="flex-1" />
 
             {post.isAuthor && (
@@ -538,59 +562,59 @@ if (!isLoggedIn) {
           </div>
         </article>
 
-            {reportOpen && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-    <div className="w-full max-w-md rounded-2xl bg-card p-5 shadow-xl">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-bold text-foreground">신고하기</h2>
+        {reportOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div className="w-full max-w-md rounded-2xl bg-card p-5 shadow-xl">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-foreground">신고하기</h2>
 
-        <button
-          type="button"
-          onClick={() => {
-            setReportOpen(false);
-            setReportReason("");
-          }}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          ✕
-        </button>
-      </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReportOpen(false);
+                    setReportReason("");
+                  }}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  ✕
+                </button>
+              </div>
 
-      <div className="space-y-2">
-       <label className="mb-4 block text-sm font-medium text-foreground">
-  신고 사유 <span className="text-destructive">*</span>
-</label>
+              <div className="space-y-2">
+                <label className="mb-4 block text-sm font-medium text-foreground">
+                  신고 사유 <span className="text-destructive">*</span>
+                </label>
 
-        <textarea
-          value={reportReason}
-          onChange={(e) => setReportReason(e.target.value)}
-          placeholder="신고 사유를 입력하세요."
-          className="min-h-[120px] w-full resize-none rounded-xl border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary"
-        />
-      </div>
+                <textarea
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  placeholder="신고 사유를 입력하세요."
+                  className="min-h-[120px] w-full resize-none rounded-xl border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
 
-      <div className="mt-5 flex justify-end gap-2">
-        <Button
-          variant="outline"
-          onClick={() => {
-            setReportOpen(false);
-            setReportReason("");
-          }}
-        >
-          취소
-        </Button>
+              <div className="mt-5 flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setReportOpen(false);
+                    setReportReason("");
+                  }}
+                >
+                  취소
+                </Button>
 
-        <Button
-          onClick={handleReportArticle}
-          disabled={!reportReason.trim() || reportSubmitting}
-          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-        >
-          {reportSubmitting ? "제출 중..." : "제출하기"}
-        </Button>
-      </div>
-    </div>
-  </div>
-)}
+                <Button
+                  onClick={handleReportArticle}
+                  disabled={!reportReason.trim() || reportSubmitting}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {reportSubmitting ? "제출 중..." : "제출하기"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="mt-8">
           <h2 className="text-base font-bold text-foreground mb-5">
@@ -700,8 +724,6 @@ if (!isLoggedIn) {
       </div>
     </div>
   );
-
-  
 };
 
 export default CommunityDetailPage;

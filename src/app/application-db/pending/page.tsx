@@ -1,11 +1,17 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Clock, CheckCircle2, ArrowRight, Home } from "lucide-react";
 import { Button } from "../../../components/ui/button";
+import { trackEvent } from "../../../lib/gtag";
 
 export default function ApplicationPendingPage() {
   const router = useRouter();
+
+  useEffect(() => {
+    trackEvent("application_pending_view");
+  }, []);
 
   return (
     <div className="py-20 sm:py-32">

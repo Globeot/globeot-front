@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import GNB from "../components/GNB";
 
 export const metadata: Metadata = {
@@ -30,6 +31,10 @@ export default function RootLayout({
           </footer>
         </div>
       </body>
+
+      {process.env.NEXT_PUBLIC_GA_ID && (
+        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+      )}
     </html>
   );
 }

@@ -35,6 +35,7 @@ import {
   type ArticleType,
   type ExchangeStatus,
 } from "../../../../lib/article";
+import { trackEvent } from "../../../../lib/gtag";
 
 type StageFilter = "pre_assign" | "pre_depart" | "abroad" | "returned";
 type TopicFilter =
@@ -417,6 +418,10 @@ export default function CommunityEditPage() {
       };
 
       await updateArticle(String(id), requestBody);
+
+      trackEvent("post_edit", {
+        article_id: String(id),
+      });
 
       alert("게시글이 수정되었습니다.");
       router.push(`/community/${id}`);

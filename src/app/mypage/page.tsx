@@ -37,6 +37,7 @@ import {
   type MyComment,
   type MyScrap,
 } from "../../lib/user";
+import { trackEvent } from "../../lib/gtag";
 
 type Tab = "posts" | "comments" | "scraps" | "bookmarks" | "settings";
 type StageValue = "PRE_ASSIGN" | "PRE_DEPART" | "ABROAD" | "RETURNED";
@@ -176,6 +177,9 @@ export default function MyPage() {
         nickname: nickname.trim(),
         stage,
       });
+
+      trackEvent("profile_update");
+
       setIsEditing(false);
       alert("프로필이 저장됐습니다.");
     } catch (error) {
@@ -192,18 +196,21 @@ export default function MyPage() {
 
     try {
       await deleteMe();
+
+      trackEvent("account_delete");
+
       localStorage.removeItem("accessToken");
       alert("회원 탈퇴가 완료됐습니다.");
       router.push("/");
     } catch (error: any) {
       console.error("회원 탈퇴 실패:", error);
-      alert(
-        error?.response?.data?.message || "회원 탈퇴에 실패했습니다.",
-      );
+      alert(error?.response?.data?.message || "회원 탈퇴에 실패했습니다.");
     }
   };
 
   const handleLogout = () => {
+    trackEvent("logout");
+
     localStorage.removeItem("accessToken");
     alert("로그아웃 되었습니다.");
     router.push("/");
@@ -217,7 +224,6 @@ export default function MyPage() {
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="card-elevated p-6 mb-6">
-
             {loadingProfile ? (
               <div className="text-sm text-muted-foreground">
                 프로필 불러오는 중...
@@ -450,98 +456,106 @@ export default function MyPage() {
               )}
 
               {activeTab === "bookmarks" && (
-  <div>
-    {favorites.length === 0 ? (
-      <div className="py-12 text-center text-sm text-muted-foreground">
-        관심 등록한 학교가 없습니다.
-      </div>
-    ) : (
-      <div className="card-elevated overflow-hidden">
-        <Table className="table-fixed">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[12%]">국가</TableHead>
-              <TableHead className="w-[14%]">도시</TableHead>
-              <TableHead className="w-[20%]">학교</TableHead>
-              <TableHead className="w-[14%] text-right">
-                환산 점수
-              </TableHead>
-              <TableHead className="w-[14%]">
-                여행접근성
-              </TableHead>
-              <TableHead className="w-[16%]">
-                예상생활비
-              </TableHead>
-              <TableHead className="w-[10%]">사이트</TableHead>
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {favorites.map((school, idx) => (
-              <TableRow key={String(school.schoolId ?? school.name ?? idx)}>
-                <TableCell className="text-sm text-muted-foreground">
-                  {school.country ?? "-"}
-                </TableCell>
-
-                <TableCell className="text-sm text-muted-foreground">
-                  {school.city ?? "-"}
-                </TableCell>
-
-                <TableCell>
-                  <button
-                    onClick={() => router.push(`/dispatch-db/${school.schoolId}`)}
-                    className="text-sm font-medium text-primary hover:underline text-left"
-                  >
-                    {school.name}
-                  </button>
-                </TableCell>
-
-                <TableCell className="text-right font-semibold text-foreground">
-                  {school.avgScore ?? "-"}
-                </TableCell>
-
-                <TableCell>
-                  {school.travelAccessLevel ? (
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-muted text-foreground">
-                      {school.travelAccessLevel === "HIGHEST"
-                        ? "최상"
-                        : school.travelAccessLevel === "HIGH"
-                          ? "상"
-                          : school.travelAccessLevel === "MEDIUM"
-                            ? "중"
-                            : "하"}
-                    </span>
+                <div>
+                  {favorites.length === 0 ? (
+                    <div className="py-12 text-center text-sm text-muted-foreground">
+                      관심 등록한 학교가 없습니다.
+                    </div>
                   ) : (
-                    "-"
-                  )}
-                </TableCell>
+                    <div className="card-elevated overflow-hidden">
+                      <Table className="table-fixed">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[12%]">국가</TableHead>
+                            <TableHead className="w-[14%]">도시</TableHead>
+                            <TableHead className="w-[20%]">학교</TableHead>
+                            <TableHead className="w-[14%] text-right">
+                              환산 점수
+                            </TableHead>
+                            <TableHead className="w-[14%]">
+                              여행접근성
+                            </TableHead>
+                            <TableHead className="w-[16%]">
+                              예상생활비
+                            </TableHead>
+                            <TableHead className="w-[10%]">사이트</TableHead>
+                          </TableRow>
+                        </TableHeader>
 
-                <TableCell className="text-sm text-muted-foreground">
-                  {school.monthlyCost ?? "-"}
-                </TableCell>
+                        <TableBody>
+                          {favorites.map((school, idx) => (
+                            <TableRow
+                              key={String(
+                                school.schoolId ?? school.name ?? idx,
+                              )}
+                            >
+                              <TableCell className="text-sm text-muted-foreground">
+                                {school.country ?? "-"}
+                              </TableCell>
 
-                <TableCell>
-                  {school.officialSite ? (
-                    <a
-                      href={school.officialSite}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline inline-flex"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  ) : (
-                    "-"
+                              <TableCell className="text-sm text-muted-foreground">
+                                {school.city ?? "-"}
+                              </TableCell>
+
+                              <TableCell>
+                                <button
+                                  onClick={() =>
+                                    router.push(
+                                      `/dispatch-db/${school.schoolId}`,
+                                    )
+                                  }
+                                  className="text-sm font-medium text-primary hover:underline text-left"
+                                >
+                                  {school.name}
+                                </button>
+                              </TableCell>
+
+                              <TableCell className="text-right font-semibold text-foreground">
+                                {school.avgScore ?? "-"}
+                              </TableCell>
+
+                              <TableCell>
+                                {school.travelAccessLevel ? (
+                                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-muted text-foreground">
+                                    {school.travelAccessLevel === "HIGHEST"
+                                      ? "최상"
+                                      : school.travelAccessLevel === "HIGH"
+                                        ? "상"
+                                        : school.travelAccessLevel === "MEDIUM"
+                                          ? "중"
+                                          : "하"}
+                                  </span>
+                                ) : (
+                                  "-"
+                                )}
+                              </TableCell>
+
+                              <TableCell className="text-sm text-muted-foreground">
+                                {school.monthlyCost ?? "-"}
+                              </TableCell>
+
+                              <TableCell>
+                                {school.officialSite ? (
+                                  <a
+                                    href={school.officialSite}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary hover:underline inline-flex"
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </a>
+                                ) : (
+                                  "-"
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    )}
-  </div>
-)}
+                </div>
+              )}
 
               {activeTab === "settings" && (
                 <div className="card-elevated divide-y">
@@ -560,7 +574,7 @@ export default function MyPage() {
                     회원 탈퇴
                   </button>
                   <button
-                    onClick={() => router.push('/auth/reset-password')}
+                    onClick={() => router.push("/auth/reset-password")}
                     className="w-full flex items-center gap-3 px-5 py-4 text-sm font-medium hover:bg-muted/50 transition-colors"
                   >
                     <ExternalLink className="h-4 w-4 text-muted-foreground" />

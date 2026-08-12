@@ -28,6 +28,7 @@ import {
   TableCell,
 } from "../../../components/ui/table";
 import api from "../../../lib/api";
+import { trackEvent } from "../../../lib/gtag";
 
 interface DispatchEntry {
   semester: string;
@@ -488,9 +489,21 @@ function SchoolDetailPageContent() {
     try {
       if (isBookmarked) {
         await api.delete(`/schools/${schoolId}/favorite`);
+
+        trackEvent("remove_from_wishlist", {
+          item_id: schoolId,
+          item_name: school.name,
+        });
+
         setIsBookmarked(false);
       } else {
         await api.post(`/schools/${schoolId}/favorite`);
+
+        trackEvent("add_to_wishlist", {
+          item_id: schoolId,
+          item_name: school.name,
+        });
+
         setIsBookmarked(true);
       }
     } catch (error) {
