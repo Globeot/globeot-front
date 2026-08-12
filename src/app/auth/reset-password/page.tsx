@@ -1,4 +1,3 @@
-// reset-password
 "use client";
 
 import React, { useState } from "react";
@@ -15,6 +14,7 @@ import {
   CardFooter,
 } from "../../../components/ui/card";
 import { updateMyPassword } from "../../../lib/user";
+import { trackEvent } from "../../../lib/gtag";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -42,12 +42,18 @@ export default function ResetPasswordPage() {
     try {
       setLoading(true);
       await updateMyPassword({ newPassword, confirmPassword });
+
       setMessage("비밀번호가 성공적으로 변경되었습니다.");
+
+      trackEvent("password_reset_complete");
+
       setNewPassword("");
       setConfirmPassword("");
     } catch (err: any) {
       console.error(err);
-      setError(err?.response?.data?.message || "비밀번호 변경 중 오류가 발생했습니다.");
+      setError(
+        err?.response?.data?.message || "비밀번호 변경 중 오류가 발생했습니다.",
+      );
     } finally {
       setLoading(false);
     }
@@ -95,11 +101,7 @@ export default function ResetPasswordPage() {
               {message && <p className="text-sm text-success">{message}</p>}
 
               <CardFooter className="px-0">
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={loading}
-                >
+                <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "변경 중..." : "비밀번호 변경"}
                 </Button>
               </CardFooter>
