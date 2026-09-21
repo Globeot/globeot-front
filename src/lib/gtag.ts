@@ -1,8 +1,16 @@
+import { amplitude, initAmplitude } from "./amplitude";
+
 export const trackEvent = (
   name: string,
   params?: Record<string, string | number | boolean>,
 ) => {
-  if (typeof window === "undefined" || !(window as any).gtag) return;
+  if (typeof window === "undefined") return;
 
-  (window as any).gtag("event", name, params);
+  initAmplitude();
+
+  if ((window as any).gtag) {
+    (window as any).gtag("event", name, params);
+  }
+
+  amplitude.track(name, params);
 };

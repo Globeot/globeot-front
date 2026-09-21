@@ -6,6 +6,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { trackEvent } from "../../lib/gtag";
+import { getUserIdFromToken, setAmplitudeUser } from "../../lib/amplitude";
 
 //화면 구별
 type AuthMode = "login" | "signup";
@@ -105,6 +106,9 @@ const LoginPage = () => {
       }
 
       localStorage.setItem("accessToken", token);
+
+      const uid = getUserIdFromToken(token);
+      if (uid) setAmplitudeUser(uid);
 
       if (data?.result?.refreshToken) {
         localStorage.setItem("refreshToken", data.result.refreshToken);

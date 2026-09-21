@@ -1,4 +1,5 @@
 import axios from "axios";
+import { resetAmplitudeUser } from "./amplitude";
 
 const api = axios.create({
   baseURL: "https://globetback.duckdns.org/api/v1",
@@ -32,7 +33,8 @@ api.interceptors.response.use(
 
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-
+      resetAmplitudeUser();
+      
       window.dispatchEvent(new Event("auth-changed"));
 
       if (hadToken) {

@@ -76,12 +76,12 @@ export default function HomePage() {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-              <Link href="/community">
+                         <Link href="/community">
                 <Button
                   size="lg"
                   variant="outline"
                   className="w-full sm:w-auto"
-                >
+                 >
                   커뮤니티 둘러보기
                 </Button>
               </Link>

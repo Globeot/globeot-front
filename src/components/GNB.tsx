@@ -14,6 +14,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./ui/button";
 import { trackEvent } from "../lib/gtag";
+import { initAmplitude, resetAmplitudeUser } from "../lib/amplitude";
 
 const navItems = [
   { path: "/community", label: "커뮤니티", icon: MessageSquare },
@@ -56,6 +57,10 @@ const GNB = () => {
 
   const pathname = usePathname();
   const router = useRouter();
+
+   useEffect(() => {
+    initAmplitude();
+  }, []);
 
   useEffect(() => {
     let expiryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -125,10 +130,11 @@ const GNB = () => {
 
       if (ok) {
         trackEvent("logout");
+        resetAmplitudeUser();
 
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
-
+        
         window.dispatchEvent(new Event("auth-changed"));
 
         setIsLoggedIn(false);
