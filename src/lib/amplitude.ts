@@ -1,7 +1,7 @@
-// src/lib/amplitude.ts
 "use client";
 
 import * as amplitude from "@amplitude/analytics-browser";
+import { sessionReplayPlugin } from "@amplitude/plugin-session-replay-browser";
 
 let initialized = false;
 
@@ -9,12 +9,20 @@ export function initAmplitude() {
   if (initialized || typeof window === "undefined") return;
   if (!process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY) return;
 
-  amplitude.init(process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY, {
+  const apiKey = process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY;
+
+  amplitude.add(
+    sessionReplayPlugin({
+      sampleRate: 1,
+    }),
+  );
+
+  amplitude.init(apiKey, {
     autocapture: {
       pageViews: true,
       sessions: true,
-      formInteractions: false,   // community/write, login 폼에 개인정보 입력란 있음
-      elementInteractions: false, // 버튼/링크 텍스트에 닉네임·학교명 노출 가능
+      formInteractions: false,
+      elementInteractions: true,
       fileDownloads: false,
       attribution: true,
       networkTracking: false,
