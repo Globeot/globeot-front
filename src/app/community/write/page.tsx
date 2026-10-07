@@ -756,12 +756,14 @@ const CommunityWritePage = () => {
             placeholder="제목을 입력하세요 *"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="text-lg h-14 bg-background border border-input pl-5 focus-visible:ring-1 focus-visible:ring-primary"
+            className="amp-block text-lg h-14 bg-background border border-input pl-5 focus-visible:ring-1 focus-visible:ring-primary"
           />
 
           <div className="rounded-xl border bg-card overflow-hidden shadow-sm">
             {editor && <MenuBar editor={editor} />}
-            <EditorContent editor={editor} />
+            <div className="amp-block">
+              <EditorContent editor={editor} />
+            </div>
 
             <style>{`
               .ProseMirror h1 { font-size: 2em !important; font-weight: 700 !important; margin: 0.67em 0 !important; display: block !important; }
@@ -880,7 +882,7 @@ const CommunityWritePage = () => {
             </div>
 
             {previews.length > 0 && (
-              <div className="flex flex-wrap gap-4 mt-4">
+              <div className="amp-blockflex flex-wrap gap-4 mt-4">
                 {previews.map((src, idx) => (
                   <div
                     key={idx}
