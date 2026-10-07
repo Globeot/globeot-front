@@ -882,7 +882,7 @@ const CommunityWritePage = () => {
             </div>
 
             {previews.length > 0 && (
-              <div className="amp-blockflex flex-wrap gap-4 mt-4">
+              <div className="amp-block flex flex-wrap gap-4 mt-4">
                 {previews.map((src, idx) => (
                   <div
                     key={idx}
