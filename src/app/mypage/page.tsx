@@ -38,6 +38,7 @@ import {
   type MyScrap,
 } from "../../lib/user";
 import { trackEvent } from "../../lib/gtag";
+import { resetAmplitudeUser, stopAmplitude } from "../../lib/amplitude";
 
 type Tab = "posts" | "comments" | "scraps" | "bookmarks" | "settings";
 type StageValue = "PRE_ASSIGN" | "PRE_DEPART" | "ABROAD" | "RETURNED";
@@ -137,6 +138,8 @@ export default function MyPage() {
   }, []);
 
   useEffect(() => {
+    if (loadingProfile || profileError) return;
+
     const fetchTabData = async () => {
       if (activeTab === "settings") return;
 
@@ -166,7 +169,7 @@ export default function MyPage() {
     };
 
     fetchTabData();
-  }, [activeTab]);
+  }, [activeTab, loadingProfile, profileError]);
 
   const handleSaveProfile = async () => {
     if (!nickname.trim()) return;
@@ -190,6 +193,18 @@ export default function MyPage() {
     }
   };
 
+  const clearAuthAndAnalytics = () => {
+    resetAmplitudeUser();
+    stopAmplitude();
+
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("termsAgreed");
+    localStorage.removeItem("analyticsConsentToken");
+
+    window.dispatchEvent(new Event("auth-changed"));
+  };
+
   const handleDeleteMe = async () => {
     const ok = window.confirm("정말 회원 탈퇴하시겠습니까?");
     if (!ok) return;
@@ -198,10 +213,9 @@ export default function MyPage() {
       await deleteMe();
 
       trackEvent("account_delete");
+      clearAuthAndAnalytics();
 
-      localStorage.removeItem("accessToken");
-      alert("회원 탈퇴가 완료됐습니다.");
-      router.push("/");
+      window.location.replace("/");
     } catch (error: any) {
       console.error("회원 탈퇴 실패:", error);
       alert(error?.response?.data?.message || "회원 탈퇴에 실패했습니다.");
@@ -209,11 +223,12 @@ export default function MyPage() {
   };
 
   const handleLogout = () => {
-    trackEvent("logout");
-
-    localStorage.removeItem("accessToken");
     alert("로그아웃 되었습니다.");
-    router.push("/");
+
+    trackEvent("logout");
+    clearAuthAndAnalytics();
+
+    window.location.replace("/");
   };
 
   return (
@@ -311,6 +326,7 @@ export default function MyPage() {
               </>
             )}
           </div>
+
           {!loadingProfile && !profileError && (
             <>
               <div className="flex gap-1 border-b mb-6 overflow-x-auto">
@@ -329,6 +345,7 @@ export default function MyPage() {
                   </button>
                 ))}
               </div>
+
               {tabError && (
                 <div className="mb-4 text-sm text-destructive">{tabError}</div>
               )}
@@ -419,6 +436,7 @@ export default function MyPage() {
                       )}
                     </div>
                   )}
+
                   {activeTab === "scraps" && (
                     <div className="space-y-2">
                       {scraps.length === 0 ? (
@@ -484,7 +502,6 @@ export default function MyPage() {
                                 </TableHead>
                               </TableRow>
                             </TableHeader>
-
                             <TableBody>
                               {favorites.map((school, idx) => (
                                 <TableRow
@@ -495,11 +512,9 @@ export default function MyPage() {
                                   <TableCell className="text-sm text-muted-foreground">
                                     {school.country ?? "-"}
                                   </TableCell>
-
                                   <TableCell className="text-sm text-muted-foreground">
                                     {school.city ?? "-"}
                                   </TableCell>
-
                                   <TableCell>
                                     <button
                                       onClick={() =>
@@ -512,11 +527,9 @@ export default function MyPage() {
                                       {school.name}
                                     </button>
                                   </TableCell>
-
                                   <TableCell className="text-right font-semibold text-foreground">
                                     {school.avgScore ?? "-"}
                                   </TableCell>
-
                                   <TableCell>
                                     {school.travelAccessLevel ? (
                                       <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-muted text-foreground">
@@ -533,11 +546,9 @@ export default function MyPage() {
                                       "-"
                                     )}
                                   </TableCell>
-
                                   <TableCell className="text-sm text-muted-foreground">
                                     {school.monthlyCost ?? "-"}
                                   </TableCell>
-
                                   <TableCell>
                                     {school.officialSite ? (
                                       <a

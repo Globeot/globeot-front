@@ -1,16 +1,17 @@
-import { amplitude, initAmplitude } from "./amplitude";
+import { trackAmplitudeEvent } from "./amplitude";
+import { hasAnalyticsConsent } from "./analytics-consent";
 
 export const trackEvent = (
   name: string,
   params?: Record<string, string | number | boolean>,
 ) => {
-  if (typeof window === "undefined") return;
+  if (!hasAnalyticsConsent()) return;
 
-  initAmplitude();
+  const gtag = (window as any).gtag;
 
-  if ((window as any).gtag) {
-    (window as any).gtag("event", name, params);
+  if (typeof gtag === "function") {
+    gtag("event", name, params);
   }
 
-  amplitude.track(name, params);
+  trackAmplitudeEvent(name, params);
 };
