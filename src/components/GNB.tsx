@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   Menu,
   X,
@@ -31,7 +31,6 @@ const getTokenExpiration = (token: string): number | null => {
     }
 
     const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-
     const paddedPayload = payload.padEnd(
       Math.ceil(payload.length / 4) * 4,
       "=",
@@ -56,9 +55,8 @@ const GNB = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const pathname = usePathname();
-  const router = useRouter();
 
-   useEffect(() => {
+  useEffect(() => {
     initAmplitude();
   }, []);
 
@@ -88,19 +86,19 @@ const GNB = () => {
 
       setIsLoggedIn(true);
 
-      // 현재는 유효하지만 곧 만료될 토큰이면
-      // 만료 시각에 맞춰 로그인 버튼으로 변경
+      // 토큰 만료 시 페이지를 새로 로드하여 분석도 종료
       if (expiresAt !== null) {
         const remainingTime = expiresAt - Date.now();
 
         expiryTimer = setTimeout(() => {
-          setIsLoggedIn(false);
+          window.location.reload();
         }, remainingTime + 100);
       }
     };
 
     const handleStorageChange = () => {
-      syncAuthState();
+      // 다른 탭에서 로그인·로그아웃한 경우 분석 상태도 다시 적용
+      window.location.reload();
     };
 
     const handleAuthChange = () => {
@@ -134,14 +132,15 @@ const GNB = () => {
 
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
-        
+        localStorage.removeItem("termsAgreed");
+        localStorage.removeItem("analyticsConsentToken");
+
         window.dispatchEvent(new Event("auth-changed"));
 
         setIsLoggedIn(false);
         setMobileOpen(false);
 
-        router.push("/");
-        router.refresh();
+        window.location.replace("/");
       }
     } else {
       setMobileOpen(false);

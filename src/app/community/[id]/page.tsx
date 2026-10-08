@@ -1,6 +1,6 @@
 "use client";
-// CommunityDetailPage.tsx
-import { useEffect, useMemo, useState } from "react";
+import { amplitude, initAmplitude } from "../../../lib/amplitude";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -190,8 +190,10 @@ function toUiComment(comment: CommentItem): UiComment {
 const CommunityDetailPage = () => {
   const { id } = useParams();
   const router = useRouter();
+  const lastTrackedArticleId = useRef<string | null>(null);
 
   const [post, setPost] = useState<UiPost | null>(null);
+
   const [comments, setComments] = useState<UiComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -242,6 +244,24 @@ const CommunityDetailPage = () => {
         };
 
         setPost(mappedPost);
+
+        const articleId = String(article.id);
+
+        if (lastTrackedArticleId.current !== articleId) {
+          initAmplitude();
+
+          amplitude.track("community_post_view", {
+            article_id: articleId,
+            exchange_status: article.exchangeStatus,
+            region: article.region,
+            type: article.type,
+          });
+
+          lastTrackedArticleId.current = articleId;
+        }
+
+        setIsBookmarked(!!(article.isScrapped ?? article.scrapped));
+        setComments((commentData.result ?? []).map(toUiComment));
         setIsBookmarked(!!(article.isScrapped ?? article.scrapped));
         setComments((commentData.result ?? []).map(toUiComment));
       } catch (err) {

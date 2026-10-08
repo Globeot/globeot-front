@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
@@ -8,24 +9,25 @@ import { Label } from "../../components/ui/label";
 import { trackEvent } from "../../lib/gtag";
 import { getUserIdFromToken, setAmplitudeUser } from "../../lib/amplitude";
 
-//화면 구별
+// 화면 구별
 type AuthMode = "login" | "signup";
 type SignupStep = 1 | 2 | 3;
 
 const API_BASE_URL = "https://globetback.duckdns.org/api/v1/auth";
 
 const LoginPage = () => {
-  //화면 구별
+  // 화면 구별
   const [mode, setMode] = useState<AuthMode>("login");
   const [signupStep, setSignupStep] = useState<SignupStep>(1);
-  //사용자 입력 정보
+
+  // 사용자 입력 정보
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [nickname, setNickname] = useState("");
   const [stage, setStage] = useState("");
 
-  //인증번호 ,회원가입 등
+  // 인증번호, 회원가입 등
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState("");
@@ -34,7 +36,11 @@ const LoginPage = () => {
   const [isCheckingNickname, setIsCheckingNickname] = useState(false);
   const [isNicknameChecked, setIsNicknameChecked] = useState(false);
 
-  //입력값 초기로 돌림
+  // 필수 동의와 서비스 이용 분석 선택 동의
+  const [requiredAgreed, setRequiredAgreed] = useState(false);
+  const [analyticsAgreed, setAnalyticsAgreed] = useState(false);
+
+  // 입력값 초기로 돌림
   const resetForm = () => {
     setEmail("");
     setPassword("");
@@ -46,12 +52,16 @@ const LoginPage = () => {
     setEmailError("");
     setIsNicknameChecked(false);
     setOtpError("");
+    setRequiredAgreed(false);
+    setAnalyticsAgreed(false);
   };
 
   const isValidEwhaEmail = (value: string) => {
     const trimmed = value.trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!emailRegex.test(trimmed)) return false;
+
     return trimmed.endsWith("@ewha.ac.kr") || trimmed.endsWith("@ewhain.net");
   };
 
@@ -79,6 +89,7 @@ const LoginPage = () => {
       const text = await res.text();
 
       let data: any = null;
+
       try {
         data = text ? JSON.parse(text) : null;
       } catch {
@@ -107,6 +118,13 @@ const LoginPage = () => {
 
       localStorage.setItem("accessToken", token);
 
+      // 서버에서 받은 선택 동의 값을 현재 로그인 토큰과 함께 저장
+      localStorage.setItem(
+        "termsAgreed",
+        String(data?.result?.termsAgreed === true),
+      );
+      localStorage.setItem("analyticsConsentToken", token);
+
       const uid = getUserIdFromToken(token);
       if (uid) setAmplitudeUser(uid);
 
@@ -133,6 +151,7 @@ const LoginPage = () => {
   // --- 회원가입 1단계: 인증번호 발송 ---
   const handleSendVerificationCode = async () => {
     const trimmedEmail = email.trim().toLowerCase();
+
     if (!isValidEwhaEmail(trimmedEmail)) {
       alert("@ewha.ac.kr 또는 @ewhain.net 이메일만 사용 가능합니다.");
       return;
@@ -140,6 +159,7 @@ const LoginPage = () => {
 
     try {
       setIsSendingCode(true);
+
       const res = await fetch(`${API_BASE_URL}/email/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -207,9 +227,11 @@ const LoginPage = () => {
 
     try {
       setIsCheckingNickname(true);
+
       const res = await fetch(
         `${API_BASE_URL}/check-nickname?nickname=${encodeURIComponent(nickname.trim())}`,
       );
+
       const isAvailable = await res.json();
 
       if (isAvailable) {
@@ -228,21 +250,28 @@ const LoginPage = () => {
 
   // --- 회원가입 3단계: 최종 가입 신청 ---
   const handleSignup = async () => {
+    if (!requiredAgreed) {
+      alert("필수 개인정보 수집 및 이용 동의에 체크해주세요.");
+      return;
+    }
+
     if (!isNicknameChecked) {
       alert("닉네임 중복확인을 해주세요.");
       return;
     }
+
     if (password !== passwordConfirm) {
       alert("비밀번호가 일치하지 않습니다.");
       return;
     }
+
     if (!stage) {
       alert("파견 단계를 선택해주세요.");
       return;
     }
 
     try {
-      //최종 회원가입 요청
+      // 최종 회원가입 요청
       const res = await fetch(`${API_BASE_URL}/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -251,6 +280,7 @@ const LoginPage = () => {
           nickname: nickname.trim(),
           password,
           exchangeStatus: stage,
+          termsAgreed: analyticsAgreed,
         }),
       });
 
@@ -279,6 +309,7 @@ const LoginPage = () => {
     setOtp(onlyNumbers);
     setOtpError("");
   };
+
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-10 px-4">
       <motion.div
@@ -290,9 +321,11 @@ const LoginPage = () => {
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground text-xl font-extrabold mb-4">
             E
           </div>
+
           <h1 className="text-2xl font-bold text-foreground">
             {mode === "login" ? "로그인" : "회원가입"}
           </h1>
+
           <p className="text-sm text-muted-foreground mt-1">
             {mode === "login"
               ? "글로벗에 오신 것을 환영합니다"
@@ -311,6 +344,7 @@ const LoginPage = () => {
                 <Label className="text-sm font-medium">이메일</Label>
                 <div className="relative mt-1.5">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+
                   <Input
                     type="email"
                     placeholder="example@ewha.ac.kr"
@@ -320,10 +354,12 @@ const LoginPage = () => {
                   />
                 </div>
               </div>
+
               <div>
                 <Label className="text-sm font-medium">비밀번호</Label>
                 <div className="relative mt-1.5">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+
                   <Input
                     type={showPassword ? "text" : "password"}
                     placeholder="비밀번호 입력"
@@ -331,6 +367,7 @@ const LoginPage = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-9 pr-10"
                   />
+
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -344,6 +381,7 @@ const LoginPage = () => {
                   </button>
                 </div>
               </div>
+
               <Button
                 onClick={handleLogin}
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
@@ -351,6 +389,7 @@ const LoginPage = () => {
                 로그인
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
+
               <div className="text-center mt-2">
                 <a
                   href="/auth/forgot-password"
@@ -364,8 +403,10 @@ const LoginPage = () => {
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium">학교 이메일</Label>
+
                 <div className="relative mt-1.5">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+
                   <Input
                     type="email"
                     placeholder="example@ewha.ac.kr"
@@ -374,13 +415,16 @@ const LoginPage = () => {
                     className="pl-9"
                   />
                 </div>
+
                 <p className="text-xs text-muted-foreground mt-1">
                   @ewha.ac.kr 또는 @ewhain.net 도메인만 허용
                 </p>
+
                 {emailError && (
                   <p className="text-sm text-red-500 mt-2">{emailError}</p>
                 )}
               </div>
+
               <Button
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={handleSendVerificationCode}
@@ -394,9 +438,11 @@ const LoginPage = () => {
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium">인증번호 (6자리)</Label>
+
                 {otpError && (
                   <p className="text-sm text-red-500 mt-2">{otpError}</p>
                 )}
+
                 <Input
                   type="text"
                   inputMode="numeric"
@@ -406,10 +452,12 @@ const LoginPage = () => {
                   onChange={handleOtpChange}
                   className="mt-1.5 text-center text-lg tracking-[0.5em] font-mono"
                 />
+
                 <p className="text-xs text-muted-foreground mt-1">
                   5분 이내에 입력해 주세요
                 </p>
               </div>
+
               <Button
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={handleVerifyOtp}
@@ -421,6 +469,7 @@ const LoginPage = () => {
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium">닉네임</Label>
+
                 <div className="flex gap-2 mt-1.5">
                   <Input
                     placeholder="닉네임을 입력해 주세요"
@@ -431,6 +480,7 @@ const LoginPage = () => {
                     }}
                     className="flex-1"
                   />
+
                   <Button
                     type="button"
                     variant="outline"
@@ -446,8 +496,10 @@ const LoginPage = () => {
                   </Button>
                 </div>
               </div>
+
               <div>
                 <Label className="text-sm font-medium">비밀번호</Label>
+
                 <Input
                   type="password"
                   placeholder="8자 이상, 영문+숫자 조합"
@@ -459,6 +511,7 @@ const LoginPage = () => {
 
               <div>
                 <Label className="text-sm font-medium">비밀번호 확인</Label>
+
                 <Input
                   type="password"
                   placeholder="비밀번호를 다시 입력해 주세요"
@@ -466,6 +519,7 @@ const LoginPage = () => {
                   onChange={(e) => setPasswordConfirm(e.target.value)}
                   className="mt-1.5"
                 />
+
                 {passwordConfirm && password !== passwordConfirm && (
                   <p className="text-sm text-red-500 mt-2">
                     비밀번호가 일치하지 않습니다.
@@ -475,6 +529,7 @@ const LoginPage = () => {
 
               <div>
                 <Label className="text-sm font-medium">파견 단계</Label>
+
                 <div className="grid grid-cols-3 gap-2 mt-1.5">
                   {[
                     { value: "APPLYING", label: "배정 전" },
@@ -496,6 +551,51 @@ const LoginPage = () => {
                   ))}
                 </div>
               </div>
+
+              <div className="space-y-3 border-t pt-4">
+                <label className="flex items-start gap-2 text-sm font-semibold">
+                  <input
+                    type="checkbox"
+                    checked={requiredAgreed && analyticsAgreed}
+                    onChange={(e) => {
+                      setRequiredAgreed(e.target.checked);
+                      setAnalyticsAgreed(e.target.checked);
+                    }}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                  />
+                  <span>개인정보 처리방침 전체 동의</span>
+                </label>
+
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={requiredAgreed}
+                    onChange={(e) => setRequiredAgreed(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                  />
+                  <span>[필수] 개인정보 수집 및 이용 동의</span>
+                </label>
+
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={analyticsAgreed}
+                    onChange={(e) => setAnalyticsAgreed(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                  />
+                  <span>[선택] 서비스 이용 분석 동의</span>
+                </label>
+
+                <a
+                  href="https://app.notion.com/p/ohminji/3edd66b521a68042ae1fc1130b7d3649"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-sm text-primary underline"
+                >
+                  개인정보 처리방침
+                </a>
+              </div>
+
               <Button
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={handleSignup}

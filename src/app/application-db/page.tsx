@@ -513,7 +513,7 @@ const ApplicationDBPage = () => {
           <h2 className="text-base font-bold text-foreground mb-4">
             2. 지원 인증
           </h2>
-          <div className="card-elevated p-5 space-y-4">
+          <div className="amp-block card-elevated p-5 space-y-4">
             <div>
               <Label className="text-sm font-medium mb-1.5 block">
                 <ImageIcon className="inline h-4 w-4 mr-1" /> 유레카 지원 확정

@@ -100,23 +100,22 @@ export default function ResetPasswordPage() {
               {error && <p className="text-sm text-destructive">{error}</p>}
               {message && <p className="text-sm text-success">{message}</p>}
 
-              <CardFooter className="px-0">
+              <div className="flex flex-col gap-3">
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "변경 중..." : "비밀번호 변경"}
                 </Button>
-              </CardFooter>
+
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => router.push("/mypage")}
+                  className="w-full"
+                >
+                  마이페이지로 이동
+                </Button>
+              </div>
             </form>
           </CardContent>
-
-          <CardFooter>
-            <Button
-              variant="secondary"
-              onClick={() => router.push("/mypage")}
-              className="w-full"
-            >
-              마이페이지로 이동
-            </Button>
-          </CardFooter>
         </Card>
       </div>
     </div>
