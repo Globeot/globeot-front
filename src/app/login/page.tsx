@@ -9,6 +9,16 @@ import { Label } from "../../components/ui/label";
 import { trackEvent } from "../../lib/gtag";
 import { getUserIdFromToken, setAmplitudeUser } from "../../lib/amplitude";
 
+// 탈퇴 후 30일 이내 재가입 시 백엔드가 result로 내려주는 재가입 가능 날짜 판별
+const isDateString = (value: unknown): value is string =>
+  typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value);
+
+// "2026-11-21" → "2026년 11월 21일" (Date 변환 없이 처리해 시간대 영향 없음)
+const formatDate = (dateStr: string) => {
+  const [y, m, d] = dateStr.slice(0, 10).split("-");
+  return `${y}년 ${Number(m)}월 ${Number(d)}일`;
+};
+
 // 화면 구별
 type AuthMode = "login" | "signup";
 type SignupStep = 1 | 2 | 3;
@@ -166,11 +176,17 @@ const LoginPage = () => {
         body: JSON.stringify({ email: trimmedEmail }),
       });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
+      const data = await res.json().catch(() => null);
 
+      if (!res.ok || data?.isSuccess === false) {
         if (data?.code === "AUTH4002") {
           alert("이미 가입된 이메일입니다.");
+        } else if (isDateString(data?.result)) {
+          // 탈퇴 후 30일 이내 재가입 시도
+          alert(
+            `탈퇴 후 30일이 지나지 않아 재가입할 수 없습니다.\n` +
+              `재가입 가능 날짜: ${formatDate(data.result)}`,
+          );
         } else {
           alert(data?.message || "인증번호 발송에 실패했습니다.");
         }
