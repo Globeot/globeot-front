@@ -9,7 +9,7 @@ import { Label } from "../../components/ui/label";
 import { trackEvent } from "../../lib/gtag";
 import { getUserIdFromToken, setAmplitudeUser } from "../../lib/amplitude";
 
-// 탈퇴 후 30일 이내 재가입 시 백엔드가 result로 내려주는 재가입 가능 날짜 판별
+// 탈퇴 후 30일 이내 재가입 시 백엔드가 rejoinAvailableAt으로 내려주는 날짜("2026-11-24T14:30:00") 판별
 const isDateString = (value: unknown): value is string =>
   typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value);
 
@@ -181,11 +181,15 @@ const LoginPage = () => {
       if (!res.ok || data?.isSuccess === false) {
         if (data?.code === "AUTH4002") {
           alert("이미 가입된 이메일입니다.");
-        } else if (isDateString(data?.result)) {
-          // 탈퇴 후 30일 이내 재가입 시도
+        } else if (data?.code === "AUTH4003") {
+          // 탈퇴 후 30일 이내 재가입 시도 (응답: { code, message, rejoinAvailableAt })
+          const rejoinAt = data?.rejoinAvailableAt;
           alert(
-            `탈퇴 후 30일이 지나지 않아 재가입할 수 없습니다.\n` +
-              `재가입 가능 날짜: ${formatDate(data.result)}`,
+            isDateString(rejoinAt)
+              ? `탈퇴 후 30일이 지나지 않아 재가입할 수 없습니다.\n` +
+                  `재가입 가능 날짜: ${formatDate(rejoinAt)}`
+              : data?.message ||
+                  "탈퇴 후 30일이 지나지 않아 재가입할 수 없습니다.",
           );
         } else {
           alert(data?.message || "인증번호 발송에 실패했습니다.");
