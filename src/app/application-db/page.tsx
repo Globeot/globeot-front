@@ -49,7 +49,7 @@ const SchoolAutocomplete = ({
 
         const res = await api.get("/schools/search", {
           params: {
-            keyword: query || "",
+            name: query || "",
           },
         });
 
@@ -236,9 +236,24 @@ const ApplicationDBPage = () => {
     !isSubmitting;
   useEffect(() => {
     const checkLogin = async () => {
+      let redirecting = false;
       try {
         await api.get("/users/me");
         setIsLoginRequired(false);
+
+        // 이미 제출한 지원서가 있으면 상태에 맞는 화면으로 보낸다
+        try {
+          await api.get("/application");
+          redirecting = true;
+          router.replace("/application-db/ranking");
+          return;
+        } catch (appErr: any) {
+          if (appErr?.response?.data?.code === "APPLICATION4007") {
+            redirecting = true;
+            router.replace("/application-db/pending");
+            return;
+          }
+        }
       } catch (err: any) {
         const status = err?.response?.status;
 
@@ -248,7 +263,8 @@ const ApplicationDBPage = () => {
           setIsLoginRequired(false);
         }
       } finally {
-        setIsAuthChecking(false);
+        // 리다이렉트 중에는 제출 폼이 잠깐 보이지 않도록 로딩 상태를 유지
+        if (!redirecting) setIsAuthChecking(false);
       }
     };
 

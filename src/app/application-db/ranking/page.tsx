@@ -28,7 +28,7 @@ interface RankingListDto {
   testType: string;
   semester: string;
   schools: SchoolInfo[];
-  isMine: boolean;
+  mine: boolean;
 }
 
 interface MyRankDto {
@@ -67,25 +67,39 @@ export default function RankingPage() {
         if (semesterFilter !== "all") params.semester = semesterFilter;
         if (schoolSearch) params.schoolName = schoolSearch;
 
-        const [myRes, rankRes] = await Promise.all([
+        const [myResult, rankResult] = await Promise.allSettled([
           api.get("/application"),
           api.get("/application/rankings", { params }),
         ]);
 
-        setMyInfo(myRes.data);
-        setRankings(rankRes.data);
-        setIsLoginRequired(false);
-      } catch (err: any) {
-        console.error("랭킹 데이터 로딩 실패:", err);
+        const authFailed = [myResult, rankResult].some(
+          (r) =>
+            r.status === "rejected" &&
+            [401, 403].includes(r.reason?.response?.status),
+        );
 
-        const status = err?.response?.status;
-
-        if (status === 401 || status === 403) {
+        if (authFailed) {
           setIsLoginRequired(true);
           setMyInfo(null);
           setRankings([]);
+          return;
+        }
+
+        setIsLoginRequired(false);
+
+        // 내 지원서가 처리 중이거나 없으면 실패해도 전체 랭킹은 보여준다
+        setMyInfo(
+          myResult.status === "fulfilled"
+            ? (myResult.value.data?.result ?? null)
+            : null,
+        );
+
+        if (rankResult.status === "fulfilled") {
+          const result = rankResult.value.data?.result;
+          setRankings(Array.isArray(result) ? result : []);
         } else {
-          setIsLoginRequired(false);
+          console.error("랭킹 데이터 로딩 실패:", rankResult.reason);
+          setRankings([]);
         }
       } finally {
         setIsLoading(false);
@@ -147,7 +161,7 @@ export default function RankingPage() {
               </div>
             </div>
 
-            {myInfo.mySchoolRankings.length > 0 && (
+            {myInfo.mySchoolRankings?.length > 0 && (
               <div className="mt-3 pt-3 border-t border-border/50 flex flex-wrap gap-1.5">
                 {myInfo.mySchoolRankings
                   .sort((a, b) => a.priority - b.priority)
@@ -248,7 +262,7 @@ export default function RankingPage() {
                 <div
                   key={index}
                   className={`card-elevated p-4 transition-colors cursor-pointer ${
-                    entry.isMine
+                    entry.mine
                       ? "border-primary/40 bg-primary/[0.04] ring-1 ring-primary/20"
                       : ""
                   }`}
@@ -283,7 +297,7 @@ export default function RankingPage() {
                         <span className="text-xs text-muted-foreground">
                           점
                         </span>
-                        {entry.isMine && (
+                        {entry.mine && (
                           <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
                             나
                           </span>
