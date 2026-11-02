@@ -227,7 +227,7 @@ function mapTopicFromApi(value?: string): TopicFilter | undefined {
     FINANCE: "재정",
     COMMUNICATION: "통신",
     MEDICAL: "보험·의료",
-    STUDY: "학업",
+    ACADEMIC: "학업",
     LIFE: "생활·적응",
     ETC: "기타",
 
@@ -247,7 +247,7 @@ function mapTopicFromApi(value?: string): TopicFilter | undefined {
 function mapRegionFromApi(value?: string): string {
   const regionMap: Record<string, string> = {
     EUROPE: "유럽",
-    AMERICA: "북미",
+    NORTH_AMERICA: "북미",
     ASIA: "아시아",
     OCEANIA: "오세아니아",
     ETC: "기타",
@@ -263,7 +263,7 @@ function mapTopicToApi(value: string): string {
     재정: "FINANCE",
     통신: "COMMUNICATION",
     "보험·의료": "MEDICAL",
-    학업: "STUDY",
+    학업: "ACADEMIC",
     "생활·적응": "LIFE",
     기타: "ETC",
   };

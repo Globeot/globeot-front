@@ -149,7 +149,7 @@ function mapTopic(value?: string): TopicFilter | undefined {
     FINANCE: "재정",
     COMMUNICATION: "통신",
     MEDICAL: "보험·의료",
-    STUDY: "학업",
+    ACADEMIC: "학업",
     LIFE: "생활·적응",
     ETC: "기타",
 
