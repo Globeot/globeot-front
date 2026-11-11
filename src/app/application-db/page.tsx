@@ -17,6 +17,14 @@ type SchoolSearchItem = {
   name: string;
 };
 
+// 검색 결과에서 고른 학교는 id가 있고, DB에 없는 학교를 직접 입력하면 id는 null
+type SchoolChoice = {
+  id: number | null;
+  name: string;
+};
+
+const emptyChoice: SchoolChoice = { id: null, name: "" };
+
 const SchoolAutocomplete = ({
   rank,
   required,
@@ -27,7 +35,7 @@ const SchoolAutocomplete = ({
   rank: number;
   required: boolean;
   value: string;
-  onChange: (v: string) => void;
+  onChange: (v: SchoolChoice) => void;
   exclude: string[];
 }) => {
   const [query, setQuery] = useState(value);
@@ -72,15 +80,15 @@ const SchoolAutocomplete = ({
     return () => clearTimeout(timer);
   }, [query, open, exclude]);
 
-  const select = (schoolName: string) => {
-    setQuery(schoolName);
-    onChange(schoolName);
+  const select = (school: SchoolSearchItem) => {
+    setQuery(school.name);
+    onChange({ id: school.id, name: school.name });
     setOpen(false);
   };
 
   const clear = () => {
     setQuery("");
-    onChange("");
+    onChange(emptyChoice);
     setSuggestions([]);
   };
 
@@ -95,9 +103,11 @@ const SchoolAutocomplete = ({
           placeholder="학교 검색..."
           value={query}
           onChange={(e) => {
-            setQuery(e.target.value);
+            const typed = e.target.value;
+            setQuery(typed);
             setOpen(true);
-            if (!e.target.value) onChange("");
+            // 직접 타이핑하면 이전에 고른 학교의 id는 더 이상 맞지 않으므로 id 없이 이름만 둔다
+            onChange({ id: null, name: typed });
           }}
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
@@ -124,7 +134,7 @@ const SchoolAutocomplete = ({
                 <button
                   type="button"
                   key={`${school.id}-${index}`}
-                  onMouseDown={() => select(school.name)}
+                  onMouseDown={() => select(school)}
                   className="w-full text-left px-3 py-2 text-sm hover:bg-muted cursor-pointer"
                 >
                   {school.name}
@@ -160,13 +170,9 @@ const ApplicationDBPage = () => {
   const [certFile, setCertFile] = useState<File | null>(null);
   const [scoreFile, setScoreFile] = useState<File | null>(null);
   const [applySemester, setApplySemester] = useState("");
-  const [schoolChoices, setSchoolChoices] = useState<string[]>([
-    "",
-    "",
-    "",
-    "",
-    "",
-  ]);
+  const [schoolChoices, setSchoolChoices] = useState<SchoolChoice[]>(
+    Array.from({ length: 5 }, () => emptyChoice),
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isLoginRequired, setIsLoginRequired] = useState(false);
@@ -231,7 +237,7 @@ const ApplicationDBPage = () => {
     certFile &&
     scoreFile &&
     applySemester &&
-    schoolChoices[0] &&
+    schoolChoices[0].name.trim() &&
     calcResult !== null &&
     !isSubmitting;
   useEffect(() => {
@@ -289,12 +295,14 @@ const ApplicationDBPage = () => {
       const submitData = {
         testType: examType.toUpperCase(),
         semester: applySemester,
+        // 빈 칸을 먼저 빼고 순위를 매겨야 1·3순위만 채웠을 때 priority가 건너뛰지 않는다
         schools: schoolChoices
-          .map((name, index) => ({
+          .filter((s) => s.name.trim() !== "")
+          .map((s, index) => ({
             priority: index + 1,
-            schoolName: name,
-          }))
-          .filter((s) => s.schoolName !== ""),
+            schoolId: s.id,
+            schoolName: s.name.trim(),
+          })),
       };
 
       // 3. 데이터와 파일들을 formData에 담기
@@ -316,7 +324,7 @@ const ApplicationDBPage = () => {
         trackEvent("application_submit", {
           test_type: examType,
           semester: applySemester,
-          school_count: schoolChoices.filter(Boolean).length,
+          school_count: schoolChoices.filter((s) => s.name !== "").length,
         });
 
         alert("지원서 제출 완료!");
@@ -330,7 +338,7 @@ const ApplicationDBPage = () => {
     }
   };
 
-  const updateSchoolChoice = (index: number, value: string) => {
+  const updateSchoolChoice = (index: number, value: SchoolChoice) => {
     const next = [...schoolChoices];
     next[index] = value;
     setSchoolChoices(next);
@@ -584,11 +592,11 @@ const ApplicationDBPage = () => {
                     key={i}
                     rank={i + 1}
                     required={i === 0}
-                    value={schoolChoices[i]}
+                    value={schoolChoices[i].name}
                     onChange={(v) => updateSchoolChoice(i, v)}
-                    exclude={schoolChoices.filter(
-                      (s, idx) => idx !== i && s !== "",
-                    )}
+                    exclude={schoolChoices
+                      .filter((s, idx) => idx !== i && s.name !== "")
+                      .map((s) => s.name)}
                   />
                 ))}
               </div>

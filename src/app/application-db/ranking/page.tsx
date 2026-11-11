@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ChevronUp,
   GraduationCap,
-  ArrowLeft,
   Users,
 } from "lucide-react";
 import { Input } from "../../../components/ui/input";
@@ -17,7 +16,7 @@ import api from "../../../lib/api";
 
 interface SchoolInfo {
   schoolName: string;
-  schoolId: number;
+  schoolId: number | null;
   priority: number;
 }
 
@@ -36,7 +35,7 @@ interface MyRankDto {
   totalApplicants: number;
   myScore: number;
   mySchoolRankings: {
-    schoolId: number;
+    schoolId: number | null;
     schoolName: string;
     priority: number;
   }[];
@@ -115,20 +114,10 @@ export default function RankingPage() {
   return (
     <div className="py-6 sm:py-10">
       <div className="container-tight">
-        <div className="mb-1 flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="shrink-0 -ml-2"
-            onClick={() => router.push("/application-db")}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-            지원 랭킹
-          </h1>
-        </div>
-        <p className="text-muted-foreground text-sm mb-6 ml-9">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
+          지원 랭킹
+        </h1>
+        <p className="text-muted-foreground text-sm mb-6">
           환산 점수 기준 전체 랭킹 · 참고용 데이터입니다
         </p>
 
@@ -167,7 +156,7 @@ export default function RankingPage() {
                   .sort((a, b) => a.priority - b.priority)
                   .map((s) => (
                     <span
-                      key={s.schoolId}
+                      key={s.priority}
                       className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium"
                     >
                       <GraduationCap className="h-3 w-3" />
