@@ -395,6 +395,9 @@ const ApplicationDBPage = () => {
         <section className="mb-8">
           <h2 className="text-base font-bold text-foreground mb-4">
             1. 환산 점수 계산
+            <h3 className="text-sm text-muted-foreground">
+              ⭐️개정 후 점수도 임의 점수 클릭하신 뒤 캡쳐본 제출해주시면 내부적으로 환산 후 랭킹에 넣어드리겠습니다!
+            </h3>
           </h2>
           <div className="flex gap-2 mb-4">
             {(["toefl", "ielts"] as const).map((type) => (
