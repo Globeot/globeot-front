@@ -467,7 +467,7 @@ export default function CommunityEditPage() {
         <article
           className={`card-elevated p-5 sm:p-6 ${
             isQuestionOrInfo
-              ? "border-l-[3px] border-l-primary/50 bg-primary/[0.03]"
+              ? "border-l-[3px] border-l-primary/50 bg-primary/3"
               : ""
           }`}
         >
