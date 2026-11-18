@@ -104,7 +104,7 @@ export type UpdateArticleRequest = {
   type: ArticleType;
   exchangeStatus: ExchangeStatus;
   topic?: string;
-  schoolId?: number | string;
+  schoolId?: number | string | null;
   imageUrls?: string[];
 };
 

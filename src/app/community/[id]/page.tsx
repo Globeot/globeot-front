@@ -2,6 +2,7 @@
 import { amplitude, initAmplitude } from "../../../lib/amplitude";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   ArrowLeft,
   Bookmark,
@@ -18,6 +19,7 @@ import {
   GraduationCap,
   Compass,
   MoreHorizontal,
+  School,
 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -53,6 +55,8 @@ type UiPost = {
   region: string;
   type: "question" | "trade" | "companion" | "info";
   topic?: TopicFilter;
+  schoolId?: number | string;
+  schoolName?: string;
   author: string;
   date: string;
   views: number;
@@ -234,6 +238,8 @@ const CommunityDetailPage = () => {
           region: mapRegion(article.region),
           type: mapType(article.type),
           topic: mapTopic(article.topic),
+          schoolId: article.schoolId ?? undefined,
+          schoolName: article.schoolName ?? undefined,
           author: article.authorNickname ?? "익명",
           date: formatDate(article.createdAt),
           views: article.viewCount ?? 0,
@@ -461,6 +467,21 @@ const CommunityDetailPage = () => {
             <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
               {post.region}
             </span>
+            {post.schoolName &&
+              (post.schoolId ? (
+                <Link
+                  href={`/dispatch-db/${post.schoolId}`}
+                  className="inline-flex items-center gap-1 text-xs text-primary border border-primary/30 px-2 py-0.5 rounded-full font-medium hover:bg-primary/10 transition-colors"
+                >
+                  <School className="h-3 w-3" />
+                  {post.schoolName}
+                </Link>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                  <School className="h-3 w-3" />
+                  {post.schoolName}
+                </span>
+              ))}
           </div>
 
           <h1 className="text-lg sm:text-2xl font-bold text-foreground mb-3">

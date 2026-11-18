@@ -424,7 +424,7 @@ export default function CommunityEditPage() {
         type: mapTypeToApi(type),
         exchangeStatus: mapStageToApi(stage),
         topic: isQuestionOrInfo && topic ? mapTopicToApi(topic) : "ETC",
-        schoolId: school?.id ? Number(school.id) : undefined,
+        schoolId: school?.id ? Number(school.id) : null,
       };
 
       await updateArticle(String(id), requestBody);
@@ -467,7 +467,7 @@ export default function CommunityEditPage() {
         <article
           className={`card-elevated p-5 sm:p-6 ${
             isQuestionOrInfo
-              ? "border-l-[3px] border-l-primary/50 bg-primary/[0.03]"
+              ? "border-l-[3px] border-l-primary/50 bg-primary/3"
               : ""
           }`}
         >
