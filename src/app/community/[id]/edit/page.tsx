@@ -424,7 +424,7 @@ export default function CommunityEditPage() {
         type: mapTypeToApi(type),
         exchangeStatus: mapStageToApi(stage),
         topic: isQuestionOrInfo && topic ? mapTopicToApi(topic) : "ETC",
-        schoolId: school?.id ? Number(school.id) : undefined,
+        schoolId: school?.id ? Number(school.id) : null,
       };
 
       await updateArticle(String(id), requestBody);
