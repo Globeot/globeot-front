@@ -36,6 +36,9 @@ import {
   type ExchangeStatus,
 } from "../../../../lib/article";
 import { trackEvent } from "../../../../lib/gtag";
+import SchoolAutocomplete, {
+  type SchoolValue,
+} from "../../../../components/SchoolAutocomplete";
 
 type StageFilter = "pre_assign" | "pre_depart" | "abroad" | "returned";
 type TopicFilter =
@@ -312,6 +315,7 @@ export default function CommunityEditPage() {
     "question",
   );
   const [topic, setTopic] = useState<TopicFilter | "">("");
+  const [school, setSchool] = useState<SchoolValue | null>(null);
   const [author, setAuthor] = useState("");
   const [date, setDate] = useState("");
   const [views, setViews] = useState(0);
@@ -359,6 +363,11 @@ export default function CommunityEditPage() {
         setRegion(mapRegionFromApi(article.region));
         setType(mapTypeFromApi(article.type));
         setTopic(mapTopicFromApi(article.topic) ?? "");
+        setSchool(
+          article.schoolId || article.schoolName
+            ? { id: article.schoolId, name: article.schoolName ?? "" }
+            : null,
+        );
         setAuthor(article.authorNickname ?? "익명");
         setDate(formatDate(article.createdAt));
         setViews(article.viewCount ?? 0);
@@ -415,6 +424,7 @@ export default function CommunityEditPage() {
         type: mapTypeToApi(type),
         exchangeStatus: mapStageToApi(stage),
         topic: isQuestionOrInfo && topic ? mapTopicToApi(topic) : "ETC",
+        schoolId: school?.id ? Number(school.id) : undefined,
       };
 
       await updateArticle(String(id), requestBody);
@@ -576,6 +586,17 @@ export default function CommunityEditPage() {
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="space-y-3 pb-6">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              학교 (선택)
+              <span className="ml-1 font-normal normal-case text-muted-foreground/70">
+                (ISEP 포함)
+              </span>
+            </label>
+
+            <SchoolAutocomplete value={school} onChange={setSchool} />
           </div>
 
           <Input
