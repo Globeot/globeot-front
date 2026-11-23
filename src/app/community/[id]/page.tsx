@@ -268,8 +268,6 @@ const CommunityDetailPage = () => {
 
         setIsBookmarked(!!(article.isScrapped ?? article.scrapped));
         setComments((commentData.result ?? []).map(toUiComment));
-        setIsBookmarked(!!(article.isScrapped ?? article.scrapped));
-        setComments((commentData.result ?? []).map(toUiComment));
       } catch (err) {
         console.error("게시글 상세 조회 실패:", err);
         setError("게시글을 불러오지 못했습니다.");
@@ -283,8 +281,12 @@ const CommunityDetailPage = () => {
     }
   }, [id]);
 
+  const submittingRef = useRef(false);
+
   const handleSubmitComment = async () => {
     if (!commentText.trim() || !id) return;
+    if (submittingRef.current) return;
+    submittingRef.current = true;
 
     try {
       setCommentSubmitting(true);
@@ -312,6 +314,7 @@ const CommunityDetailPage = () => {
       console.error("댓글 작성 실패:", err);
       alert("댓글 작성에 실패했습니다.");
     } finally {
+      submittingRef.current = false;
       setCommentSubmitting(false);
     }
   };
@@ -714,9 +717,10 @@ const CommunityDetailPage = () => {
                       placeholder={`${comment.author}님에게 답글 입력...`}
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && handleSubmitComment()
-                      }
+                      onKeyDown={(e) => {
+                        if (e.nativeEvent.isComposing) return;
+                        if (e.key === "Enter") handleSubmitComment();
+                      }}
                       className="text-sm bg-card"
                     />
                     <Button
@@ -745,6 +749,7 @@ const CommunityDetailPage = () => {
                 if (replyTo === null) setCommentText(e.target.value);
               }}
               onKeyDown={(e) => {
+                if (e.nativeEvent.isComposing) return;
                 if (replyTo === null && e.key === "Enter")
                   handleSubmitComment();
               }}
