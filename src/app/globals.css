@@ -41,6 +41,17 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: "Noto Sans KR", sans-serif;
+    /* 사이트 전체 텍스트 드래그 선택(복사) 막기 */
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  /* 입력창과 에디터에서는 선택·복사·붙여넣기 허용 */
+  input,
+  textarea,
+  [contenteditable="true"],
+  .ProseMirror {
+    -webkit-user-select: text;
+    user-select: text;
   }
 }
 
