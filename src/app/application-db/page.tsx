@@ -163,6 +163,11 @@ const examTabs: { type: ExamType; label: string }[] = [
 // 개정 후 TOEFL 오버롤 점수 (6점 만점)
 const toeflNewScoreOptions = ["6.0", "5.5", "5.0", "4.5", "4.0", "3.5", "3.0"];
 
+// IELTS 오버롤 점수 (9점 만점, 0.5 단위)
+const ieltsScoreOptions = Array.from({ length: 19 }, (_, i) =>
+  (9 - i * 0.5).toFixed(1),
+);
+
 const semesterOptions = ["2027-2", "2027-1"] as const;
 
 const ApplicationDBPage = () => {
@@ -174,7 +179,7 @@ const ApplicationDBPage = () => {
   const [listening, setListening] = useState("");
   const [speaking, setSpeaking] = useState("");
   const [writing, setWriting] = useState("");
-  const [toeflNewOverall, setToeflNewOverall] = useState("");
+  const [overall, setOverall] = useState("");
   const [calcResult, setCalcResult] = useState<number | null>(null);
 
   const [certFile, setCertFile] = useState<File | null>(null);
@@ -187,27 +192,6 @@ const ApplicationDBPage = () => {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isLoginRequired, setIsLoginRequired] = useState(false);
 
-  const ieltsToToefl: Record<number, number> = {
-    9: 30,
-    8.5: 28,
-    8: 27,
-    7.5: 25,
-    7: 22,
-    6.5: 19,
-    6: 16,
-    5.5: 12,
-    5: 8,
-    4.5: 4,
-    4: 0,
-    3.5: 0,
-    3: 0,
-    2.5: 0,
-    2: 0,
-    1.5: 0,
-    1: 0,
-    0.5: 0,
-    0: 0,
-  };
 
   const calculate = () => {
     const g = parseFloat(gpa);
@@ -217,28 +201,22 @@ const ApplicationDBPage = () => {
     const percentile = gpaToPercentile[gpaKey] || 0;
     const gpaScore = percentile / 2;
 
-    if (examType === "toeflNew") {
-      const overall = parseFloat(toeflNewOverall);
-      if (isNaN(overall)) return;
-      const finalScore = (overall / 6) * 50 + gpaScore;
+    // 개정 후 TOEFL(6점 만점)·IELTS(9점 만점): 50 × overall / 만점 + 백분위 / 2
+    if (examType === "toeflNew" || examType === "ielts") {
+      const o = parseFloat(overall);
+      if (isNaN(o)) return;
+      const maxOverall = examType === "toeflNew" ? 6 : 9;
+      const finalScore = (o / maxOverall) * 50 + gpaScore;
       setCalcResult(Math.round(finalScore * 100) / 100);
       return;
     }
 
-    let r = parseFloat(reading);
-    let l = parseFloat(listening);
-    let s = parseFloat(speaking);
-    let w = parseFloat(writing);
+    const r = parseFloat(reading);
+    const l = parseFloat(listening);
+    const s = parseFloat(speaking);
+    const w = parseFloat(writing);
 
     if ([g, r, l, s, w].some(isNaN)) return;
-
-    if (examType === "ielts") {
-      r = ieltsToToefl[r];
-      l = ieltsToToefl[l];
-      s = ieltsToToefl[s];
-      w = ieltsToToefl[w];
-      if ([r, l, s, w].some((v) => v === undefined)) return;
-    }
 
     const readingScore = (r / 30) * 10;
     const listeningScore = (l / 30) * 10;
@@ -251,8 +229,8 @@ const ApplicationDBPage = () => {
   };
 
   const calcValid =
-    examType === "toeflNew"
-      ? gpa !== "" && toeflNewOverall !== ""
+    examType === "toeflNew" || examType === "ielts"
+      ? gpa !== "" && overall !== ""
       : [gpa, reading, listening, speaking, writing].every((v) => v !== "");
   const canSubmitTranscript =
     certFile &&
@@ -429,7 +407,7 @@ const ApplicationDBPage = () => {
                   setListening("");
                   setSpeaking("");
                   setWriting("");
-                  setToeflNewOverall("");
+                  setOverall("");
                 }}
                 className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${examType === type ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
               >
@@ -468,18 +446,23 @@ const ApplicationDBPage = () => {
                 )}
               </div>
             </div>
-            {examType === "toeflNew" ? (
+            {examType === "toeflNew" || examType === "ielts" ? (
               <div>
                 <Label className="text-sm font-medium">
-                  TOEFL Overall (6점 만점)
+                  {examType === "toeflNew"
+                    ? "TOEFL Overall (6점 만점)"
+                    : "IELTS Overall (9점 만점)"}
                 </Label>
                 <select
-                  value={toeflNewOverall}
-                  onChange={(e) => setToeflNewOverall(e.target.value)}
+                  value={overall}
+                  onChange={(e) => setOverall(e.target.value)}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1.5 outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="">점수 선택</option>
-                  {toeflNewScoreOptions.map((v) => (
+                  {(examType === "toeflNew"
+                    ? toeflNewScoreOptions
+                    : ieltsScoreOptions
+                  ).map((v) => (
                     <option key={v} value={v}>
                       {v}
                     </option>
@@ -493,63 +476,46 @@ const ApplicationDBPage = () => {
                     label: "Reading",
                     value: reading,
                     setter: setReading,
-                    max: examType === "toefl" ? 30 : 9,
+                    max: 30,
                   },
                   {
                     label: "Listening",
                     value: listening,
                     setter: setListening,
-                    max: examType === "toefl" ? 30 : 9,
+                    max: 30,
                   },
                   {
                     label: "Speaking",
                     value: speaking,
                     setter: setSpeaking,
-                    max: examType === "toefl" ? 30 : 9,
+                    max: 30,
                   },
                   {
                     label: "Writing",
                     value: writing,
                     setter: setWriting,
-                    max: examType === "toefl" ? 30 : 9,
+                    max: 30,
                   },
                 ].map((f) => (
                   <div key={f.label}>
                     <Label className="text-sm font-medium">
                       {f.label} (0~{f.max})
                     </Label>
-                    {examType === "ielts" ? (
-                      <select
-                        value={f.value}
-                        onChange={(e) => f.setter(e.target.value)}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1.5 outline-none focus:ring-2 focus:ring-primary"
-                      >
-                        <option value="">선택</option>
-                        {Array.from({ length: 19 }, (_, i) => i * 0.5).map(
-                          (v) => (
-                            <option key={v} value={v}>
-                              {v}
-                            </option>
-                          ),
-                        )}
-                      </select>
-                    ) : (
-                      <Input
-                        type="number"
-                        min={0}
-                        max={f.max}
-                        step={1}
-                        placeholder={`0~${f.max}`}
-                        value={f.value}
-                        onChange={(e) => {
-                          const val = Number(e.target.value);
-                          // ‼️ 범위 밖 입력 방지 (토플 30점 초과 금지)
-                          if (val > f.max) return;
-                          f.setter(e.target.value);
-                        }}
-                        className="mt-1.5"
-                      />
-                    )}
+                    <Input
+                      type="number"
+                      min={0}
+                      max={f.max}
+                      step={1}
+                      placeholder={`0~${f.max}`}
+                      value={f.value}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        // ‼️ 범위 밖 입력 방지 (토플 30점 초과 금지)
+                        if (val > f.max) return;
+                        f.setter(e.target.value);
+                      }}
+                      className="mt-1.5"
+                    />
                   </div>
                 ))}
               </div>
