@@ -152,21 +152,29 @@ const SchoolAutocomplete = ({
   );
 };
 
-type ExamType = "toeflNew" | "toefl" | "ielts";
+type ExamType = "toeflNew" | "ielts";
 
 const examTabs: { type: ExamType; label: string }[] = [
   { type: "toeflNew", label: "TOEFL (개정 후)" },
-  { type: "toefl", label: "TOEFL (개정 전)" },
   { type: "ielts", label: "IELTS" },
 ];
 
 // 개정 후 TOEFL 오버롤 점수 (6점 만점)
 const toeflNewScoreOptions = ["6.0", "5.5", "5.0", "4.5", "4.0", "3.5", "3.0"];
 
-// IELTS 오버롤 점수 (9점 만점, 0.5 단위)
-const ieltsScoreOptions = Array.from({ length: 19 }, (_, i) =>
-  (9 - i * 0.5).toFixed(1),
-);
+// IELTS 오버롤 점수 (9점 만점, 6.0부터 선택 가능)
+const ieltsScoreOptions = ["9.0", "8.5", "8.0", "7.5", "7.0", "6.5", "6.0"];
+
+// ETS 환산 기준표: IELTS Overall → 개정 후 TOEFL Overall (6점 만점)
+const ieltsToToeflNew: Record<string, number> = {
+  "9.0": 6,
+  "8.5": 6,
+  "8.0": 6,
+  "7.5": 5.5,
+  "7.0": 5,
+  "6.5": 4.5,
+  "6.0": 4,
+};
 
 const semesterOptions = ["2027-2", "2027-1"] as const;
 
@@ -175,10 +183,6 @@ const ApplicationDBPage = () => {
 
   const [examType, setExamType] = useState<ExamType>("toeflNew");
   const [gpa, setGpa] = useState("");
-  const [reading, setReading] = useState("");
-  const [listening, setListening] = useState("");
-  const [speaking, setSpeaking] = useState("");
-  const [writing, setWriting] = useState("");
   const [overall, setOverall] = useState("");
   const [calcResult, setCalcResult] = useState<number | null>(null);
 
@@ -201,37 +205,16 @@ const ApplicationDBPage = () => {
     const percentile = gpaToPercentile[gpaKey] || 0;
     const gpaScore = percentile / 2;
 
-    // 개정 후 TOEFL(6점 만점)·IELTS(9점 만점): 50 × overall / 만점 + 백분위 / 2
-    if (examType === "toeflNew" || examType === "ielts") {
-      const o = parseFloat(overall);
-      if (isNaN(o)) return;
-      const maxOverall = examType === "toeflNew" ? 6 : 9;
-      const finalScore = (o / maxOverall) * 50 + gpaScore;
-      setCalcResult(Math.round(finalScore * 100) / 100);
-      return;
-    }
-
-    const r = parseFloat(reading);
-    const l = parseFloat(listening);
-    const s = parseFloat(speaking);
-    const w = parseFloat(writing);
-
-    if ([g, r, l, s, w].some(isNaN)) return;
-
-    const readingScore = (r / 30) * 10;
-    const listeningScore = (l / 30) * 10;
-    const speakingScore = (s / 30) * 15;
-    const writingScore = (w / 30) * 15;
-
-    const finalScore =
-      gpaScore + readingScore + listeningScore + speakingScore + writingScore;
+    // IELTS는 ETS 환산표로 개정 후 TOEFL 점수로 바꾼 뒤 TOEFL과 똑같이 계산
+    // 최종 점수 = 50 × TOEFL overall / 6 + 백분위 / 2
+    const toeflOverall =
+      examType === "ielts" ? ieltsToToeflNew[overall] : parseFloat(overall);
+    if (toeflOverall === undefined || isNaN(toeflOverall)) return;
+    const finalScore = (toeflOverall / 6) * 50 + gpaScore;
     setCalcResult(Math.round(finalScore * 100) / 100);
   };
 
-  const calcValid =
-    examType === "toeflNew" || examType === "ielts"
-      ? gpa !== "" && overall !== ""
-      : [gpa, reading, listening, speaking, writing].every((v) => v !== "");
+  const calcValid = gpa !== "" && overall !== "";
   const canSubmitTranscript =
     certFile &&
     scoreFile &&
@@ -292,7 +275,6 @@ const ApplicationDBPage = () => {
       setIsSubmitting(true);
       const formData = new FormData();
       const submitData = {
-        // 개정 전/후 TOEFL 모두 서버에는 TOEFL로 전송
         testType: examType === "ielts" ? "IELTS" : "TOEFL",
         semester: applySemester,
         // 빈 칸을 먼저 빼고 순위를 매겨야 1·3순위만 채웠을 때 priority가 건너뛰지 않는다
@@ -403,10 +385,6 @@ const ApplicationDBPage = () => {
                 onClick={() => {
                   setExamType(type);
                   setCalcResult(null);
-                  setReading("");
-                  setListening("");
-                  setSpeaking("");
-                  setWriting("");
                   setOverall("");
                 }}
                 className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${examType === type ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
@@ -446,80 +424,28 @@ const ApplicationDBPage = () => {
                 )}
               </div>
             </div>
-            {examType === "toeflNew" || examType === "ielts" ? (
-              <div>
-                <Label className="text-sm font-medium">
-                  {examType === "toeflNew"
-                    ? "TOEFL Overall (6점 만점)"
-                    : "IELTS Overall (9점 만점)"}
-                </Label>
-                <select
-                  value={overall}
-                  onChange={(e) => setOverall(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1.5 outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="">점수 선택</option>
-                  {(examType === "toeflNew"
-                    ? toeflNewScoreOptions
-                    : ieltsScoreOptions
-                  ).map((v) => (
-                    <option key={v} value={v}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  {
-                    label: "Reading",
-                    value: reading,
-                    setter: setReading,
-                    max: 30,
-                  },
-                  {
-                    label: "Listening",
-                    value: listening,
-                    setter: setListening,
-                    max: 30,
-                  },
-                  {
-                    label: "Speaking",
-                    value: speaking,
-                    setter: setSpeaking,
-                    max: 30,
-                  },
-                  {
-                    label: "Writing",
-                    value: writing,
-                    setter: setWriting,
-                    max: 30,
-                  },
-                ].map((f) => (
-                  <div key={f.label}>
-                    <Label className="text-sm font-medium">
-                      {f.label} (0~{f.max})
-                    </Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={f.max}
-                      step={1}
-                      placeholder={`0~${f.max}`}
-                      value={f.value}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        // ‼️ 범위 밖 입력 방지 (토플 30점 초과 금지)
-                        if (val > f.max) return;
-                        f.setter(e.target.value);
-                      }}
-                      className="mt-1.5"
-                    />
-                  </div>
+            <div>
+              <Label className="text-sm font-medium">
+                {examType === "toeflNew"
+                  ? "TOEFL Overall (6점 만점)"
+                  : "IELTS Overall (9점 만점)"}
+              </Label>
+              <select
+                value={overall}
+                onChange={(e) => setOverall(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1.5 outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">점수 선택</option>
+                {(examType === "toeflNew"
+                  ? toeflNewScoreOptions
+                  : ieltsScoreOptions
+                ).map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
                 ))}
-              </div>
-            )}
+              </select>
+            </div>
             <Button
               className="w-full"
               disabled={!calcValid}
